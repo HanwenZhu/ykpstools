@@ -4,7 +4,7 @@ from functools import wraps
 from urllib.parse import urlparse
 
 from flask import (
-    Flask, send_file, redirect, url_for, request)
+    Flask, send_file, redirect, url_for, request, abort)
 
 from logins import ps_login, ms_login, psl_login
 from webutils import set_up_session, load_text
@@ -19,7 +19,7 @@ from exceptions import WrongUsernameOrPassword
 # won't be in final project. just doing for demo/fun
 
 port = 11111
-app = Flask(__file__)
+app = Flask(__name__)
 
 session = set_up_session()
 username, password = None, None
@@ -27,7 +27,7 @@ username, password = None, None
 all_methods = (
     'GET', 'HEAD', 'POST', 'PUT',
     'DELETE', 'CONNECT', 'OPTIONS',
-    'TRACE', 'PATCH'
+    'TRACE', 'PATCH',
 )
 
 
@@ -115,7 +115,9 @@ def return_from_page(path):
             )
         )
     elif url_for('outlook') in request.referrer:
-        return ('', 404, [])
+        return '', 404, []
+    else:
+        abort(404)
 
 
 app.run('localhost', port=port)
