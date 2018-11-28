@@ -12,27 +12,42 @@ def load(prompt=False):
     If not found, raise exceptions.GetUsernamePasswordError.
     
     Derived from george-yu/AutoAuth @ GitHub
+
+    prompt: bool, prompt user for password in shell if encounters error
     """
-    try:
-        usr_dat = expanduser(
-            '~/Library/Application Support/AutoAuth/usr.dat')
-        if not exists(usr_dat):
-            raise GetUsernamePasswordError("'usr.dat' not found.")
-
+    if not prompt:
+        return _load()
+    else:
         try:
-            with open(usr_dat) as file:
-                username = file.readline().strip()
-                password = b64decode(file.readline().strip().encode()).decode()
-        except (OSError, IOError) as err:
-            raise GetUsernamePasswordError(
-                "Error when opening 'usr.dat'") from err
+            return _load()
+        except GetUsernamePasswordError as error:
+            return _prompt()
 
-        if not username or not password:
-            raise GetUsernamePasswordError(
-                "'usr.dat' contains invalid username or password.") 
 
-        return username, password
-    except GetUsernamePasswordError:
-        username = input('Enter username (e.g. s12345): ').strip()
-        password = getpass(
-            'Password for %s: ' % username).strip()
+def _load():
+    """Internal function."""
+    usr_dat = expanduser(
+    '~/Library/Application Support/AutoAuth/usr.dat')
+    if not exists(usr_dat):
+        raise GetUsernamePasswordError("'usr.dat' not found.")
+
+    try:
+        with open(usr_dat) as file:
+            username = file.readline().strip()
+            password = b64decode(file.readline().strip().encode()).decode()
+    except (OSError, IOError) as error:
+        raise GetUsernamePasswordError(
+            "Error when opening 'usr.dat'") from error
+
+    if not username or not password:
+        raise GetUsernamePasswordError(
+            "'usr.dat' contains invalid username or password.") 
+
+    return username, password
+
+def _prompt():
+    """Internal function."""
+    username = input('Enter username (e.g. s12345): ').strip()
+    password = getpass(
+        'Password for %s: ' % username).strip()
+    return username, password
