@@ -7,7 +7,7 @@ from flask import (
     Flask, send_file, redirect, url_for, request, abort)
 
 from logins import ps_login, ms_login, psl_login
-from webutils import set_up_session, load_text
+from webutils import set_up_session, load_text, all_methods
 from exceptions import WrongUsernameOrPassword
 
 
@@ -20,30 +20,23 @@ from exceptions import WrongUsernameOrPassword
 
 port = 11111
 app = Flask(__name__)
-
 session = set_up_session()
 username, password = None, None
 
-all_methods = (
-    'GET', 'HEAD', 'POST', 'PUT',
-    'DELETE', 'CONNECT', 'OPTIONS',
-    'TRACE', 'PATCH',
-)
 
-
-def render_response(resp, replace=True):
+def render_response(response, replace=True):
     """Renders outer response.
 
-    resp: requests.models.Response
+    response: requests.models.Response
     replace: tuple (old, new)
     """
-    html = load_text(resp)
+    html = load_text(response)
     if replace:
-        url = resp.url
+        url = response.url
         if not url.endswith('/'):
             url += '/'
         html.replace('"/', '"' + url)
-    return html, resp.status_code, [] # resp.headers.items()
+    return html, response.status_code, [] # response.headers.items()
 
 
 # Decorator for pages that require login
@@ -67,6 +60,11 @@ def require_username_password(view):
 @require_username_password
 def main_page():
     return send_file('./html/index.html')
+
+
+@app.route('/style.css')
+def style_css():
+    return send_file('./html/style.css')
 
 
 @app.route('/login', methods=('GET', 'POST'))
@@ -107,17 +105,13 @@ def powerschool_learning():
 def return_from_page(path):
     global session
     if url_for('powerschool_learning') in request.referrer:
-        return render_response(
-            session.request(
-                request.method,
-                'https://ykpaoschool.learning.powerschool.com/'
-                + path
-            )
-        )
+        url = 'https://ykpaoschool.learning.powerschool.com/'
     elif url_for('outlook') in request.referrer:
-        return '', 404, []
+        url = 'https://outlook.com/'
     else:
         abort(404)
+    return render_response(
+            session.request(request.method, url + path))
 
 
 app.run('localhost', port=port)

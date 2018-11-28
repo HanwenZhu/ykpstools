@@ -45,6 +45,7 @@ def _load():
 
     return username, password
 
+
 def _prompt():
     """Internal function."""
     username = input('Enter username (e.g. s12345): ').strip()

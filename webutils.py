@@ -8,74 +8,70 @@ import requests
 from bs4 import BeautifulSoup
 
 
+all_methods = (
+    'GET', 'HEAD', 'POST', 'PUT',
+    'DELETE', 'CONNECT', 'OPTIONS',
+    'TRACE', 'PATCH',
+)
+
+
 def set_up_session():
     """Set up a session"""
     session = requests.Session()
-    UA = ' '.join((
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6)',
-        'AppleWebKit/537.36 (KHTML, like Gecko)',
-        'Chrome/69.0.3497.100',
-        'Safari/537.36',
-    ))
-    session.headers.update({'User-Agent': UA})
+    session.headers.update(
+        {'User-Agent': ' '.join((
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6)',
+            'AppleWebKit/537.36 (KHTML, like Gecko)',
+            'Chrome/69.0.3497.100',
+            'Safari/537.36',
+    ))})
     return session
 
 
-def load_text(resp):
+def load_text(response):
     """Load text from html or requests.Response"""
-    if isinstance(resp, str):
-        return resp
-    elif isinstance(resp, requests.Response):
-        resp.encoding = 'utf-8'
-        return resp.text
+    if isinstance(response, str):
+        return response
+    elif isinstance(response, requests.Response):
+        response.encoding = 'utf-8'
+        return response.text
     else:
-        raise TypeError("Type of 'resp' unsupported.")
+        raise TypeError("Type of 'response' unsupported.")
 
 
-def load_soup(resp):
+def load_soup(response):
     """Load bs4.BeautifulSoup from html or requests.Response"""
-    return BeautifulSoup(load_text(resp), features='lxml')
+    return BeautifulSoup(load_text(response), features='lxml')
 
 
-def load_CDATA(resp):
+def load_CDATA(response):
     """Load CDATA from html or requests.Response"""
-    CDATA = json.loads(
-        re.compile(
-            r'//<!\[CDATA\[\n\$Config=(.*);\n//\]\]>'
-        ).findall(
-            load_soup(resp).find(
-                text=re.compile(r'//<!\[CDATA\[.*')
-            ).string
-        )[0]
-    )
-    return CDATA
+    expression = re.compile(r'//<!\[CDATA\[\n\$Config=(.*);\n//\]\]>')
+    return json.loads(expression.findall(
+        load_soup(response).find(text=expression).string)[0])
 
 
-def load_form(resp, *find_args, **find_kwargs):
+def load_form(response, *find_args, **find_kwargs):
     """Load form from html or requests.Response"""
-    return load_soup(resp).find('form', *find_args, **find_kwargs)
+    return load_soup(response).find('form', *find_args, **find_kwargs)
 
 
-def load_payload(resp, updates={}, *find_args, **find_kwargs):
+def load_payload(response, updates={}, *find_args, **find_kwargs):
     """Load completed form from html or requests.Response"""
     payload = {
         i.get('name'): i.get('value')
-        for i in load_form(resp).find_all('input')
-        if i is not None
-    }
+        for i in load_form(response).find_all('input') if i is not None}
     payload.update(updates)
     return payload
 
 
-def submit_form(session, resp, updates={}, *find_args, **find_kwargs):
+def submit_form(session, response, updates={}, *find_args, **find_kwargs):
     """Submit form from html or requests.Response"""
-    form = load_form(resp)
+    form = load_form(response)
     method = form.get('method')
     action = form.get('action')
     if action.startswith('/'):
-        url = urlparse(resp.url)
+        url = urlparse(response.url)
         action = url.scheme + '://' + url.netloc + action
-    return session.request(
-        method, action,
-        data=load_payload(resp, updates, *find_args, **find_kwargs)
-    )
+    return session.request(method, action,
+        data=load_payload(response, updates, *find_args, **find_kwargs))
