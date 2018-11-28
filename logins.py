@@ -52,7 +52,7 @@ def ms_login(session, username, password, redirect_to_ms=None,
     if len(load_text(ms_login).splitlines()) == 1:
         return submit_form(session, ms_login)
 
-    # Get credential type of Microsoft login    
+    # Get credential type of Microsoft login
     ms_login_CDATA = load_CDATA(ms_login)
     ms_get_credential_type_payload = {
         'username': username + '@ykpaoschool.cn',
