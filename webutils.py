@@ -1,5 +1,8 @@
 """Utilities for general web rendering, parsing, etc."""
 
+from os import popen
+from socket import gethostbyname, gethostname, getfqdn
+from uuid import UUID, getnode
 import json
 import re
 from urllib.parse import urlparse

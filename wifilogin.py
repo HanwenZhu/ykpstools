@@ -4,12 +4,7 @@
 __author__ = 'George Yu'
 __version__ = '3.1.5'
 
-from os import system, popen, path
-from sys import version_info
-from socket import gethostbyname, gethostname, getfqdn
-from uuid import UUID, getnode
 from urllib.parse import unquote
-from base64 import b64decode
 import re
 
 import requests
@@ -19,7 +14,7 @@ from webutils import get_IP, get_MAC
 
 
 def _login_webauth(username, password, session=requests.Session(),
-                   IP=get_IP(), MAC=get_MAC(), **_):
+    IP=get_IP(), MAC=get_MAC(), **_):
     """Internal function. Web Authentication."""
     url = 'https://auth.ykpaoschool.cn/portalAuthAction.do'
     form_data = {

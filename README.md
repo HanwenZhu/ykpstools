@@ -2,7 +2,20 @@
 Tools &amp; Utilities associated with online logins of YKPS.
 
 ## Dependencies
-Install:
+YKPS Tools require a distribution of `Python 3.x` installed.
+Install dependencies within Python for YKPS Tools:
 ```sh
 python3 -m pip install -r requirements.txt
+```
+
+## Quick Start
+In Python shell:
+```python
+>>> from user import User
+>>> from webutils import load_soup
+>>>
+>>> # Login to Powerschool Learning
+>>> resp = User(prompt=True).psl_login()
+>>> # Print html
+>>> print(load_soup(resp).find('div', id='navbarowner'))
 ```

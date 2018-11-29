@@ -32,7 +32,7 @@ class User:
         """Logins to YKPS Wi-Fi."""
         return auth(
             self.username, self.password, session=self.session,
-            self.IP, self.MAC)
+            IP=self.IP, MAC=self.MAC)
 
     def ps_login(self):
         """Returns login to Powerschool response."""
