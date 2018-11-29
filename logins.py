@@ -177,21 +177,23 @@ def office_login(username, password, session=requests.Session()):
 def _main():
     """Internal function, Just for testing & debugging."""
 
-    # Username and Password    
-    USERNAME, PASSWORD = load(prompt=True)
-    print()
+    # # Username and Password
+    # USERNAME, PASSWORD = load(prompt=True)
+    # print()
 
-    session = set_up_session()
+    # session = set_up_session()
     
-    ms_login(USERNAME, PASSWORD, session=session)
-    psl_login(USERNAME, PASSWORD, session=session)
-    ms_login(USERNAME, PASSWORD, session=session)
-    ps_login(USERNAME, PASSWORD, session=session)
-    ps_login(USERNAME, PASSWORD, session=session)
+    # ms_login(USERNAME, PASSWORD, session=session)
+    # psl_login(USERNAME, PASSWORD, session=session)
+    # ms_login(USERNAME, PASSWORD, session=session)
+    # ps_login(USERNAME, PASSWORD, session=session)
+    # ps_login(USERNAME, PASSWORD, session=session)
 
-    # Login to Powerschool Learning
-    psl = psl_login(USERNAME, PASSWORD, session=session)
-    psl_page = load_soup(psl)
+    # # Login to Powerschool Learning
+    # psl = psl_login(USERNAME, PASSWORD, session=session)
+    # psl_page = load_soup(psl)
+
+    print(ps_login.text)
 
 
 if __name__ == '__main__':

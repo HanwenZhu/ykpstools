@@ -2,9 +2,9 @@
 
 import requests
 
-from webutils import set_up_session
+from webutils import get_IP, get_MAC, set_up_session
 from creds import load
-from wifilogin import get_IP, get_MAC, auth
+from wifilogin import auth
 import logins
 
 
@@ -31,7 +31,8 @@ class User:
     def wifi_auth(self):
         """Logins to YKPS Wi-Fi."""
         return auth(
-            self.username, self.password, session=self.session)
+            self.username, self.password, session=self.session,
+            self.IP, self.MAC)
 
     def ps_login(self):
         """Returns login to Powerschool response."""

@@ -15,37 +15,16 @@ import re
 import requests
 
 from exceptions import GetIPError
+from webutils import get_IP, get_MAC
 
 
-def get_IP():
-    """Returns private IP address."""
-    try:
-        IP = gethostbyname(gethostname())
-    except Exception:
-        try:
-            IP = gethostbyname(getfqdn())
-        except Exception:
-            IP = popen("ifconfig | grep 'inet ' | grep -v '127.0' | xargs "
-                "| awk -F '[ :]' '{print $2}'").readline().strip()
-            if not IP:
-                raise GetIPError("Can't retrieve IP address.")
-    return IP
-
-
-def get_MAC():
-    """Returns MAC address."""
-    MAC = ':'.join([UUID(int=getnode()).hex[-12:].upper()[i:i+2]
-        for i in range(0,11,2)])
-    return MAC
-
-
-def _login_webauth(username, password, session=requests.Session()):
+def _login_webauth(username, password, session=requests.Session(),
+                   IP=get_IP(), MAC=get_MAC(), **_):
     """Internal function. Web Authentication."""
     url = 'https://auth.ykpaoschool.cn/portalAuthAction.do'
-    IP, MAC = get_IP_MAC()
     form_data = {
-        'wlanuserip': get_IP(),
-        'mac': get_MAC(),
+        'wlanuserip': IP,
+        'mac': MAC,
         'wlanacname': 'hh1u6p',
         'wlanacIp': '192.168.186.2',
         'userid': username,
@@ -54,7 +33,7 @@ def _login_webauth(username, password, session=requests.Session()):
     session.post(url, data=form_data, verify=False)
 
 
-def _login_blueauth(username, password, session=requests.Session()):
+def _login_blueauth(username, password, session=requests.Session(), **_):
     """Internal function. The Blue Auth Page."""
     # Get authServ and oldURL
     web = s.get('http://www.apple.com/cn/',
@@ -81,6 +60,9 @@ def auth(username, password, *args, **kwargs):
     """Takes session and logins to Wi-Fi.
 
     username, password: str, str,
-    session: requests.Session, the session to authorize with."""
+
+    session: requests.Session, the session to authorize with,
+             defaults to requests.Session().
+    """
     _login_webauth(username, password, *args, **kwargs)
     _login_blueauth(username, password, *args, **kwargs)

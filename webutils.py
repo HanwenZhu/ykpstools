@@ -15,6 +15,28 @@ all_methods = (
 )
 
 
+def get_IP():
+    """Returns private IP address."""
+    try:
+        IP = gethostbyname(gethostname())
+    except Exception:
+        try:
+            IP = gethostbyname(getfqdn())
+        except Exception:
+            IP = popen("ifconfig | grep 'inet ' | grep -v '127.0' | xargs "
+                "| awk -F '[ :]' '{print $2}'").readline().strip()
+            if not IP:
+                raise GetIPError("Can't retrieve IP address.")
+    return IP
+
+
+def get_MAC():
+    """Returns MAC address."""
+    MAC = ':'.join([UUID(int=getnode()).hex[-12:].upper()[i:i+2]
+        for i in range(0,11,2)])
+    return MAC
+
+
 def set_up_session(*args, **kwargs):
     """Set up a session.
 
