@@ -9,8 +9,19 @@ import re
 
 import requests
 
-from exceptions import GetIPError
 from webutils import get_IP, get_MAC
+
+
+def auth(username, password, *args, **kwargs):
+    """Takes session and logins to Wi-Fi.
+
+    username, password: str, str,
+
+    session: requests.Session, the session to authorize with,
+             defaults to requests.Session().
+    """
+    _login_webauth(username, password, *args, **kwargs)
+    _login_blueauth(username, password, *args, **kwargs)
 
 
 def _login_webauth(username, password, session=requests.Session(),
@@ -49,15 +60,3 @@ def _login_blueauth(username, password, session=requests.Session(), **_):
         'authServ': authServ
     }
     session.post(url, data=form_data, verify=False)
-
-
-def auth(username, password, *args, **kwargs):
-    """Takes session and logins to Wi-Fi.
-
-    username, password: str, str,
-
-    session: requests.Session, the session to authorize with,
-             defaults to requests.Session().
-    """
-    _login_webauth(username, password, *args, **kwargs)
-    _login_blueauth(username, password, *args, **kwargs)
