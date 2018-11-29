@@ -36,7 +36,7 @@ def get_IP():
 def get_MAC():
     """Returns MAC address."""
     MAC = ':'.join([UUID(int=getnode()).hex[-12:].upper()[i:i+2]
-        for i in range(0,11,2)])
+        for i in range(0, 11, 2)])
     return MAC
 
 
