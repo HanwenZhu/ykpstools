@@ -2,10 +2,10 @@
 
 import requests
 
-from webutils import get_IP, get_MAC, set_up_session
-from creds import load
-from wifilogin import auth
-import logins
+from . import logins
+from .webutils import get_IP, get_MAC, set_up_session
+from .creds import load
+from .wifilogin import auth
 
 
 class User:

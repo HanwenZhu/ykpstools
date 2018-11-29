@@ -5,9 +5,9 @@ from urllib.parse import urlparse
 
 from flask import Flask, send_file, redirect, url_for, request, abort
 
-from logins import ps_login, ms_login, psl_login
-from webutils import set_up_session, load_text, all_methods
-from exceptions import WrongUsernameOrPassword
+from .logins import ps_login, ms_login, psl_login
+from .webutils import set_up_session, load_text, all_methods
+from .exceptions import WrongUsernameOrPassword
 
 
 # Very crappy, loads of bugs, highly unoptimized,

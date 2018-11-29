@@ -9,7 +9,7 @@ import re
 
 import requests
 
-from webutils import get_IP, get_MAC
+from .webutils import get_IP, get_MAC
 
 
 def auth(username, password, *args, **kwargs):
@@ -50,7 +50,6 @@ def _login_blueauth(username, password, session=requests.Session(), **_):
         oldURL, authServ = oldURL_and_authServ[0]
     else:
         return
-
     # Login
     url = 'http://192.168.1.1:8181/'
     form_data = {

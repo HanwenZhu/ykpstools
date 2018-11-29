@@ -2,13 +2,16 @@
 
 import json
 from urllib.parse import urlparse
+from hmac import new
+from hashlib import md5
+from base64 import b64encode
 
 import requests
 
-from exceptions import (
+from .exceptions import (
     WrongUsernameOrPassword, GetUsernamePasswordError)
-from creds import load
-from webutils import (
+from .creds import load
+from .webutils import (
     set_up_session, load_text, load_soup, load_CDATA, load_form, load_payload,
     submit_form)
 
@@ -27,8 +30,18 @@ def ps_login(username, password, session=requests.Session()):
         'https://powerschool.ykpaoschool.cn/public/home.html')
 
     # Parse login page and send login form
+    payload = load_payload(ps_login)
+    payload_updates = {
+        'dbpw': new(payload['contextData'].encode('ascii'),
+            password.lower().encode('ascii'), md5).hexdigest(),
+        'account': username,
+        'pw': new(payload['contextData'].encode('ascii'),
+            b64encode(md5(password.encode('ascii')).digest()
+                ).replace(b'=', b''), md5).hexdigest(),
+        'ldappassword': password if 'ldappassword' in payload else '',
+    }
     return submit_form(ps_login, session=session,
-        updates={'account': username, 'pw': password}, id='LoginForm')
+        updates=payload_updates, id='LoginForm')
 
 
 def ms_login(username, password, session=requests.Session(),

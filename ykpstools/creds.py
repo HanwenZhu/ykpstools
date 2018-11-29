@@ -4,7 +4,7 @@ from os.path import exists, expanduser
 from base64 import b64decode
 from getpass import getpass
 
-from exceptions import GetUsernamePasswordError
+from .exceptions import GetUsernamePasswordError
 
 
 def load(prompt=False):

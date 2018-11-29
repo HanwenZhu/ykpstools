@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from exceptions import GetIPError
+from .exceptions import GetIPError
 
 all_methods = (
     'GET', 'HEAD', 'POST', 'PUT',
