@@ -3,8 +3,7 @@
 from functools import wraps
 from urllib.parse import urlparse
 
-from flask import (
-    Flask, send_file, redirect, url_for, request, abort)
+from flask import Flask, send_file, redirect, url_for, request, abort
 
 from logins import ps_login, ms_login, psl_login
 from webutils import set_up_session, load_text, all_methods
@@ -84,7 +83,7 @@ def user_login():
 def outlook():
     global session, username, password
     return render_response(
-        ms_login(session, username, password)
+        ms_login(username, password, session=session)
     )
 
 
@@ -114,4 +113,9 @@ def return_from_page(path):
             session.request(request.method, url + path))
 
 
-app.run('localhost', port=port)
+def run():
+    app.run('localhost', port=port)
+
+
+if __name__ == '__main__':
+    run()

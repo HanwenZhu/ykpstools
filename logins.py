@@ -3,6 +3,8 @@
 import json
 from urllib.parse import urlparse
 
+import requests
+
 from exceptions import (
     WrongUsernameOrPassword, GetUsernamePasswordError)
 from creds import load
@@ -11,32 +13,33 @@ from webutils import (
     submit_form)
 
 
-def ps_login(session, username, password):
+def ps_login(username, password, session=requests.Session()):
     """Login to Powerschool.
     Returns a requests.Response instance.
 
-    session: requests.Session,
     username: str,
     password: str,
+
+    session: requests.Session, defaults to requests.Session().
     """
     # Request login page to Powerschool
     ps_login = session.get(
         'https://powerschool.ykpaoschool.cn/public/home.html')
 
     # Parse login page and send login form
-    return submit_form(session, ps_login,
+    return submit_form(ps_login, session=session,
         updates={'account': username, 'pw': password}, id='LoginForm')
 
 
-def ms_login(session, username, password, redirect_to_ms=None,
-             load_page_after_login=True):
+def ms_login(username, password, session=requests.Session(),
+    redirect_to_ms=None, load_page_after_login=True):
     """Login to Microsoft Office365.
     Returns a requests.Response instance.
 
-    session: requests.Session,
     username: str,
     password: str,
 
+    session: requests.Session, defaults to requests.Session().
     redirect_to_ms: requests.Response or str, the page that a login page
                     redirects to for Microsoft Office365 login, defaults to
                     GET 'https://login.microsoftonline.com/'
@@ -44,16 +47,16 @@ def ms_login(session, username, password, redirect_to_ms=None,
     """
     # Default if page not specified
     if redirect_to_ms is None:
-        ms_login = session.get('https://login.microsoftonline.com/')
+        redirect_to_ms = session.get('https://login.microsoftonline.com/')
     else:
-        ms_login = redirect_to_ms
+        redirect_to_ms = redirect_to_ms
 
     # If already logged in to Microsoft Office365
-    if len(load_text(ms_login).splitlines()) == 1:
-        return submit_form(session, ms_login)
+    if len(load_text(redirect_to_ms).splitlines()) == 1:
+        return submit_form(redirect_to_ms, session=session)
 
     # Get credential type of Microsoft login
-    ms_login_CDATA = load_CDATA(ms_login)
+    ms_login_CDATA = load_CDATA(redirect_to_ms)
     ms_get_credential_type_payload = {
         'username': username + '@ykpaoschool.cn',
         'isOtherIdpSupported': True,
@@ -128,20 +131,21 @@ def ms_login(session, username, password, redirect_to_ms=None,
 
     # If encounters 'Working...' page
     if ms_out.url == ms_out_url:
-        return submit_form(session, ms_out)
+        return submit_form(ms_out, session=session)
 
     # Return page after login
     else:
         return ms_out
 
 
-def psl_login(session, username, password):
+def psl_login(username, password, session=requests.Session()):
     """Login to Powerschool Learning.
     Returns a requests.Response instance.
 
-    session: requests.Session,
     username: str,
     password: str,
+
+    session: requests.Session, defaults to requests.Session().
     """
     # Login by Office 365 on Powerschool Learning
     psl_url = 'ykpaoschool.learning.powerschool.com'
@@ -153,20 +157,21 @@ def psl_login(session, username, password):
         return psl_login
 
     # Login through Microsoft
-    return ms_login(session, username, password,
-        redirect_to_ms=psl_login)
+    return ms_login(username, password,
+        session=session, redirect_to_ms=psl_login)
 
 
-def office_login(session, username, password):
+def office_login(username, password, session=requests.Session()):
     """Login to Microsoft Office.
     Returns a requests.Response instance.
 
-    session: requests.Session,
     username: str,
     password: str,
+
+    session: requests.Session, defaults to requests.Session().
     """
     # Login through Microsoft
-    return ms_login(session, username, password)
+    return ms_login(username, password, session=session)
 
 
 def _main():
@@ -178,14 +183,14 @@ def _main():
 
     session = set_up_session()
     
-    ms_login(session, USERNAME, PASSWORD)
-    psl_login(session, USERNAME, PASSWORD)
-    ms_login(session, USERNAME, PASSWORD)
-    ps_login(session, USERNAME, PASSWORD)
-    ps_login(session, USERNAME, PASSWORD)
+    ms_login(USERNAME, PASSWORD, session=session)
+    psl_login(USERNAME, PASSWORD, session=session)
+    ms_login(USERNAME, PASSWORD, session=session)
+    ps_login(USERNAME, PASSWORD, session=session)
+    ps_login(USERNAME, PASSWORD, session=session)
 
     # Login to Powerschool Learning
-    psl = psl_login(session, USERNAME, PASSWORD)
+    psl = psl_login(USERNAME, PASSWORD, session=session)
     psl_page = load_soup(psl)
 
 
