@@ -273,8 +273,9 @@ class User:
             'i18': None,
             'i19': 66306,
         }
+        ms_out_url = 'https://login.microsoftonline.com/kmsi'
         ms_out = self.post(ms_out_url, data=ms_confirm_payload)
-        if ms_out.url().geturl() == 'https://login.microsoftonline.com/kmsi':
+        if ms_out.url().geturl() == ms_out_url:
             # If encounters 'Working...' page
             return ms_out.submit()
         else:

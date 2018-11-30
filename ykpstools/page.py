@@ -87,4 +87,8 @@ class Page:
                 url = self.url()
                 action = url.scheme + '://' + url.netloc + action
             return self.user.request(method, action,
-                data=self.payload(updates, *find_args, **find_kwargs))    
+                data=self.payload(updates, *find_args, **find_kwargs))
+
+    def json(self):
+        """Returns response in json format."""
+        return self.response.json()

@@ -14,9 +14,9 @@ In Python shell, at repository directory:
 >>> import ykpstools as yt
 >>>
 >>> # Login to Powerschool Learning
->>> resp = yt.User(prompt=True).psl_login()
+>>> page = yt.User(prompt=True).psl_login()
 >>> # Print html
->>> print(load_soup(resp).find('div', id='navbarowner'))
+>>> print(page.soup().find('div', id='navbarowner'))
 <div id="navbarowner">
     *Your name should appear here*
   </div>
