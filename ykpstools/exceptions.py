@@ -1,19 +1,23 @@
 """All exceptions."""
 
-__all__ = ['YKPSLoginError', 'WrongUsernameOrPassword',
+__all__ = ['LoginError', 'LoginConnectionError', 'WrongUsernameOrPassword',
     'GetUsernamePasswordError', 'GetIPError']
 
-class YKPSLoginError(Exception):
+class LoginError(Exception):
     pass
 
 
-class WrongUsernameOrPassword(YKPSLoginError, ConnectionError, ValueError):
+class LoginConnectionError(LoginError, ConnectionError):
     pass
 
 
-class GetUsernamePasswordError(YKPSLoginError, FileNotFoundError):
+class WrongUsernameOrPassword(LoginError, ValueError):
     pass
 
 
-class GetIPError(YKPSLoginError, OSError):
+class GetUsernamePasswordError(LoginError, FileNotFoundError):
+    pass
+
+
+class GetIPError(LoginError, OSError):
     pass

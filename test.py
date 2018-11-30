@@ -2,18 +2,21 @@
 
 import re
 
-from ykpstools import User, load_soup
+import ykpstools as yt
 
 
 # Create a user. ('prompt' means to prompt for username and password in python
 #                 shell if not available.)
-user = User(prompt=True)
+user = yt.User(prompt=True)
 
 # YKPS site Wi-Fi authorization
-user.wifi_auth()
+try:
+    user.auth()
+except yt.LoginConnectionError as error:
+    print("Can't log in to school Wi-Fi.\n")
 
-# Login to Powerschool ()
-powerschool = load_soup(user.ps_login(), features='html.parser')
+# Login to Powerschool (here I use html.parser because lxml has wierd issues)
+powerschool = user.ps_login().soup(features='html.parser')
 
 # Parse all the classes and grades
 classes = [
@@ -27,10 +30,11 @@ names = [
     for c in classes
 ]
 grades = [
-    ord(c.find('a', class_='bold').string[0])
+    ord(c.find('a', class_='bold').string[0]) # ord built-in to find rank
     for c in classes
 ]
 
 # Lowest score (ouch!)
-lowest = grades.index(max(grades))
-print('Your class with lowest score is: %s' % names[lowest])
+lowest = grades.index(max(grades)) # max(ord) <= e.g. ord('E') > ord('A')
+print('Your class with lowest score is: %s.\n' % names[lowest])
+print('Score: %s' % classes[lowest].find('a', class_='bold').string)
