@@ -11,8 +11,7 @@ python3 -m pip install -r requirements.txt
 ## Quick Start
 In Python shell:
 ```python
->>> from ykpstools.user import User
->>> from ykpstools.webutils import load_soup
+>>> from ykpstools import User, load_soup
 >>>
 >>> # Login to Powerschool Learning
 >>> resp = User(prompt=True).psl_login()

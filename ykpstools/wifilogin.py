@@ -42,7 +42,7 @@ def _login_webauth(username, password, session=requests.Session(),
 def _login_blueauth(username, password, session=requests.Session(), **_):
     """Internal function. The Blue Auth Page."""
     # Get authServ and oldURL
-    web = s.get('http://www.apple.com/cn/',
+    web = session.get('http://www.apple.com/cn/',
         allow_redirects=True, headers=headers)
     oldURL_and_authServ = re.compile(
         r'oldURL=([^&]+)&authServ=(.+)').findall(unquote(web.url))
