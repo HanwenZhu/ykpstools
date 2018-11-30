@@ -1,5 +1,8 @@
 """Utilities for general web rendering, parsing, etc."""
 
+__all__ = ['all_methods', 'get_IP', 'get_MAC', 'set_up_session', 'load_text',
+    'load_soup', 'load_CDATA', 'load_form', 'load_payload', 'submit_form']
+
 from os import popen
 from socket import gethostbyname, gethostname, getfqdn
 from uuid import UUID, getnode

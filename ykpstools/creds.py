@@ -1,5 +1,7 @@
 """Gets username and password."""
 
+__all__ = ['load']
+
 from os.path import exists, expanduser
 from base64 import b64decode
 from getpass import getpass

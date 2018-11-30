@@ -1,5 +1,8 @@
 """All exceptions."""
 
+__all__ = ['YKPSLoginError', 'WrongUsernameOrPassword',
+    'GetUsernamePasswordError', 'GetIPError']
+
 class YKPSLoginError(Exception):
     pass
 

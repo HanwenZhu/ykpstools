@@ -1,5 +1,7 @@
 """The main class 'User'."""
 
+__all__ = ['User']
+
 import requests
 
 from . import logins

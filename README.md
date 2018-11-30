@@ -1,5 +1,5 @@
 # YKPS Tools
-Tools &amp; Utilities associated with online logins of YKPS.
+Tools &amp; utilities associated with online logins of YKPS.
 
 ## Dependencies
 YKPS Tools require a distribution of `Python 3.x` installed.
@@ -9,7 +9,7 @@ python3 -m pip install -r requirements.txt
 ```
 
 ## Quick Start
-In Python shell:
+In Python shell, at repository directory:
 ```python
 >>> from ykpstools import User, load_soup
 >>>

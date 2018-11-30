@@ -1,11 +1,15 @@
-"""Tools to authorize into school Wi-Fi."""
+"""Tools to authorize into school Wi-Fi.
+Derived from: https://github.com/yu-george/AutoAuth-YKPS/
+"""
 
-# Derived from: https://github.com/yu-george/AutoAuth-YKPS/
+__all__ = ['auth']
 __author__ = 'George Yu'
 __version__ = '3.1.5'
 
 from urllib.parse import unquote
+from urllib3.exceptions import InsecureRequestWarning
 import re
+from warnings import catch_warnings, filterwarnings
 
 import requests
 
@@ -36,14 +40,15 @@ def _login_webauth(username, password, session=requests.Session(),
         'userid': username,
         'passwd': password
     }
-    session.post(url, data=form_data, verify=False)
+    with catch_warnings():
+        filterwarnings('ignore', category=InsecureRequestWarning)
+        session.post(url, data=form_data, verify=False)
 
 
 def _login_blueauth(username, password, session=requests.Session(), **_):
     """Internal function. The Blue Auth Page."""
     # Get authServ and oldURL
-    web = session.get('http://www.apple.com/cn/',
-        allow_redirects=True, headers=headers)
+    web = session.get('http://www.apple.com/cn/', allow_redirects=True)
     oldURL_and_authServ = re.compile(
         r'oldURL=([^&]+)&authServ=(.+)').findall(unquote(web.url))
     if oldURL_and_authServ:
@@ -58,4 +63,6 @@ def _login_blueauth(username, password, session=requests.Session(), **_):
         'oldURL': oldURL,
         'authServ': authServ
     }
-    session.post(url, data=form_data, verify=False)
+    with catch_warnings():
+        filterwarnings('ignore', category=InsecureRequestWarning)
+        session.post(url, data=form_data, verify=False)
