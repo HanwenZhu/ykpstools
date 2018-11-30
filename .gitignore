@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# macOS
+.DS_Store
+
 # C extensions
 *.so
 
@@ -62,6 +65,10 @@ instance/
 
 # Scrapy stuff:
 .scrapy
+
+# Sublime Text stuff:
+*.sublime-project
+*.sublime-workspace
 
 # Sphinx documentation
 docs/_build/
