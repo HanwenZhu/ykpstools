@@ -3,9 +3,9 @@
 __all__ = ['User']
 
 import re
-import json
 from os import popen
 from os.path import exists, expanduser
+from json import dumps
 from hmac import new
 from hashlib import md5
 from base64 import b64encode, b64decode
@@ -32,8 +32,12 @@ class User:
         prompt=False, session_args=(), session_kwargs={}):
         """Initialize a User.
 
-        username_password: (username: str, password: str), defaults to
-                           creds.load()
+        username=None: str, user's username, defaults to load or prompt,
+        password=None: str, user's password, defaults to load or prompt,
+        load=True: bool, try load username and password from local AutoAuth,
+        prompt=False: bool, prompt for username and password if can't load,
+        session_args: tuple, arguments for requests.Session,
+        session_kwargs: dict, keyword arguments for requests.Session.
         """
         self.session = requests.Session(*session_args, **session_kwargs)
         self.session.headers.update(
@@ -92,7 +96,7 @@ class User:
         return username, password
 
     def _get_IP(self):
-        """Returns private IP address."""
+        """Internal function. Returns private IP address."""
         try:
             IP = gethostbyname(gethostname())
         except Exception:
@@ -106,13 +110,13 @@ class User:
         return IP
 
     def _get_MAC(self):
-        """Returns MAC address."""
+        """Internal function. Returns MAC address."""
         MAC = ':'.join([UUID(int=getnode()).hex[-12:].upper()[i:i+2]
             for i in range(0, 11, 2)])
         return MAC
 
     def _user_connection_error_wrapper(function):
-        """Internal decorator."""
+        """Internal decorator. Raise LoginConnectionError if can't connect."""
         @wraps(function)
         def wrapped_function(*args, **kwargs):
             try:
@@ -122,14 +126,17 @@ class User:
         return wrapped_function
 
     @_user_connection_error_wrapper
+    @wraps(requests.Session.request)
     def request(self, *args, **kwargs):
         return Page(self, self.session.request(*args, **kwargs))
 
     @_user_connection_error_wrapper
+    @wraps(requests.Session.request)
     def get(self, *args, **kwargs):
         return Page(self, self.session.get(*args, **kwargs))
 
     @_user_connection_error_wrapper
+    @wraps(requests.Session.request)
     def post(self, *args, **kwargs):
         return Page(self, self.session.post(*args, **kwargs))
 
@@ -176,7 +183,7 @@ class User:
                 data=form_data, verify=False)
 
     def ps_login(self):
-        """Returns login to Powerschool response."""
+        """Returns login to Powerschool Page."""
         # Request login page to Powerschool
         ps_login = self.get(
             'https://powerschool.ykpaoschool.cn/public/home.html')
@@ -197,7 +204,7 @@ class User:
         return ps_login.submit(updates=payload_updates, id='LoginForm')
 
     def ms_login(self, redirect_to_ms=None):
-        """Returns login to Microsoft response.
+        """Returns login to Microsoft Page.
 
         redirect_to_ms: requests.Response or str, the page that a login page
                         redirects to for Microsoft Office365 login, defaults
@@ -225,7 +232,7 @@ class User:
         ms_get_credential_type = self.post(
             'https://login.microsoftonline.com'
             '/common/GetCredentialType?mkt=en-US',
-            data=json.dumps(ms_get_credential_type_payload)
+            data=dumps(ms_get_credential_type_payload)
         ).json()
         # Redirect to organization page (https://adfs.ykpaoschool.cn)
         adfs_login = self.get(
@@ -282,7 +289,7 @@ class User:
             return ms_out
 
     def psl_login(self):
-        """Returns login to Powerschool Learning response."""
+        """Returns login to Powerschool Learning Page."""
         # Login by Office 365 on Powerschool Learning
         psl_url = 'ykpaoschool.learning.powerschool.com'
         psl_login = self.get(

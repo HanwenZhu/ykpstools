@@ -1,7 +1,5 @@
 """Class 'Page' is a wrapper around requests.models.Response with
 convenient functions.
-
-response: a requests.models.Response instance.
 """
 
 __all__ = ['Page']
@@ -17,14 +15,14 @@ class Page:
 
     """Class 'Page' is a wrapper around requests.models.Response with
     convenient functions.
-    
-    response: a requests.models.Response instance.
     """
 
-    def __init__(self, user, response, *args, **kwargs):
+    def __init__(self, user, response):
         """Initialize a Page.
 
-        response: requests.models.Response"""
+        user: a ykpstools.user.User instance, the User this page belongs to,
+        response: a requests.models.Response instance.
+        """
         self.response = response
         self.response.encoding = 'utf-8'
         self.user = user
@@ -40,7 +38,9 @@ class Page:
     def soup(self, features='lxml', *args, **kwargs):
         """Returns bs4.BeautifulSoup of this page.
 
-        *args, **kwargs: arguments for BeautifulSoup.
+        features='lxml': 'features' argument for BeautifulSoup,
+        *args: arguments for BeautifulSoup,
+        **kwargs: keyword arguments for BeautifulSoup.
         """
         return BeautifulSoup(self.text(), features=features, *args, **kwargs)
 
@@ -53,7 +53,8 @@ class Page:
     def form(self, *find_args, **find_kwargs):
         """Gets HTML element form as bs4.element.Tag of this page.
 
-        *find_args, **find_kwargs: arguments for BeautifulSoup.find('form').
+        *find_args: arguments for BeautifulSoup.find('form'),
+        **find_kwargs: keyword arguments for BeautifulSoup.find('form').
         """
         return self.soup().find('form', *find_args, **find_kwargs)
 
@@ -61,7 +62,8 @@ class Page:
         """Load completed form of this page.
 
         updates: updates to payload,
-        *find_args, **find_kwargs: arguments for BeautifulSoup.find('form').
+        *find_args: arguments for BeautifulSoup.find('form'),
+        **find_kwargs: keyword arguments for BeautifulSoup.find('form').
         """
         payload = {
             i.get('name'): i.get('value')
@@ -75,7 +77,8 @@ class Page:
         """Submit form from page.
         
         updates: updates to payload,
-        *find_args, **find_kwargs: arguments for BeautifulSoup.find('form').
+        *find_args: arguments for BeautifulSoup.find('form'),
+        **find_kwargs: keyword arguments for BeautifulSoup.find('form').
         """
         form = self.form()
         if form is None:
