@@ -14,12 +14,13 @@ user.wifi_auth()
 
 # Login to Powerschool ()
 powerschool = load_soup(user.ps_login(), features='html.parser')
-print(powerschool)
+
 # Parse all the classes and grades
 classes = [
     tr
     for tr in powerschool.find_all('tr', id=re.compile(r'ccid_[0-9]{6}'))
-    if tr.find('a', class_='bold').string[0].isalpha()
+    if (tr.find('a', class_='bold') is not None
+        and tr.find('a', class_='bold').string[0].isalpha())
 ]
 names = [
     c.find('td', align='left').get_text()
@@ -29,6 +30,7 @@ grades = [
     ord(c.find('a', class_='bold').string[0])
     for c in classes
 ]
+
 # Lowest score (ouch!)
 lowest = grades.index(max(grades))
 print('Your class with lowest score is: %s' % names[lowest])
