@@ -74,12 +74,13 @@ def load_text(response):
         raise TypeError("Type of 'response' unsupported.")
 
 
-def load_soup(response):
+def load_soup(response, features='lxml', *args, **kwargs):
     """Load bs4.BeautifulSoup from html or requests.Response.
 
     response: str as html or requests.Response.
     """
-    return BeautifulSoup(load_text(response), features='lxml')
+    return BeautifulSoup(load_text(response),
+        features=features, *args, **kwargs)
 
 
 def load_CDATA(response):

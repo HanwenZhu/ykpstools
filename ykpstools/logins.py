@@ -31,6 +31,10 @@ def ps_login(username, password, session=requests.Session()):
     ps_login = session.get(
         'https://powerschool.ykpaoschool.cn/public/home.html')
 
+    # If already logged in
+    if urlparse(ps_login.url).path == '/guardian/home.html':
+        return ps_login
+
     # Parse login page and send login form
     payload = load_payload(ps_login)
     payload_updates = {

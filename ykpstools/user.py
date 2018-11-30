@@ -31,7 +31,7 @@ class User:
         self.MAC = get_MAC()
 
     def wifi_auth(self):
-        """Logins to YKPS Wi-Fi."""
+        """Logins to YKPS Wi-Fi. Returns None."""
         return auth(
             self.username, self.password, session=self.session,
             IP=self.IP, MAC=self.MAC)
