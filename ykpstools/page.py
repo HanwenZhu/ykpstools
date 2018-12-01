@@ -1,9 +1,10 @@
-"""Class 'Page' is a wrapper around requests.models.Response with
-convenient functions.
+"""Class 'Page' is a wrapper around requests.Response with convenient
+functions.
 """
 
 __all__ = ['Page']
 
+import functools
 import json
 import re
 from urllib.parse import urlparse
@@ -11,30 +12,35 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
+
 class Page:
 
-    """Class 'Page' is a wrapper around requests.models.Response with
-    convenient functions.
+    """Class 'Page' is a wrapper around requests.Response with convenient
+    functions.
     """
 
     def __init__(self, user, response):
         """Initialize a Page.
 
         user: a ykpstools.user.User instance, the User this page belongs to,
-        response: a requests.models.Response instance.
+        response: a requests.Response instance.
         """
         self.response = response
         self.response.encoding = 'utf-8'
         self.user = user
 
-    def url(self):
-        """Get current URL."""
-        return urlparse(self.response.url)
+    def url(self, *args, **kwargs):
+        """Get current URL.
+
+        *args: arguments for urllib.parse.urlparse,
+        *kwargs: keyword arguments for urllib.parse.urlparse."""
+        return urlparse(self.response.url, *args, **kwargs)
 
     def text(self):
         """Returns response text."""
         return self.response.text
 
+    @functools.wraps(BeautifulSoup)
     def soup(self, features='lxml', *args, **kwargs):
         """Returns bs4.BeautifulSoup of this page.
 
@@ -92,6 +98,10 @@ class Page:
             return self.user.request(method, action,
                 data=self.payload(updates, *find_args, **find_kwargs))
 
-    def json(self):
-        """Returns response in json format."""
-        return self.response.json()
+    @functools.wraps(requests.Response.json)
+    def json(self, *args, **kwargs):
+        """Returns response in json format.
+
+        *args: arguments for requests.Response.json,
+        *kwargs: keyword arguments for requests.Response.json."""
+        return self.response.json(*args, **kwargs)
