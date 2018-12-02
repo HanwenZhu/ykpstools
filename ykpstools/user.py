@@ -10,6 +10,7 @@ import hmac
 import json
 import os
 import socket
+import subprocess
 import sys
 from urllib.parse import urlparse, parse_qs
 from urllib3.exceptions import InsecureRequestWarning
@@ -97,19 +98,42 @@ class User:
         """Internal function. Returns private IP address."""
         try:
             IP = socket.gethostbyname(socket.gethostname())
-        except socket.error:
+            assert not IP.startswith('127.')
+        except (socket.error, AssertionError):
             try:
                 IP = socket.gethostbyname(socket.getfqdn())
-            except socket.error:
-                if sys.platform  in ('dos', 'win32', 'win16'):
-                    IP = NotImplemented
+                assert not IP.startswith('127.')
+            except (socket.error, AssertionError):
+                if sys.platform in ('win32', 'win16', 'dos'):
+                    raise GetIPError('Not implemented OS: ' + sys.platform)
+                elif (sys.platform == 'darwin'
+                    or sys.platform.startswith('linux')):
+                    if sys.platform == 'darwin':
+                        interfaces = ['en0', 'en1']
+                    elif sys.platform.startswith('linux'):
+                        interfaces = ['eth0', 'eth1', 'eth2', 'wlan0', 'wlan1',
+                        'wifi0', 'ath0', 'ath1', 'ppp0']
+                    for interface in interfaces:
+                        try:
+                            ifconfig = str(subprocess.check_output(
+                                'ifconfig {} | grep "inet "'.format(interface),
+                                shell=True))
+                        except subprocess.CalledProcessError:
+                            continue
+                        else:
+                            IP = ifconfig.splitlines()[0].strip().split()[1]
+                            if IP.startswith('127.'):
+                                continue
+                            else:
+                                break
+                    else:
+                        raise GetIPError("Can't retrieve IP address.")
                 else:
-                    with os.popen("ifconfig | grep 'inet ' | grep -v '127.0' "
-                        "| xargs | awk -F '[ :]' '{print $2}'") as ifconfig:
-                        IP = ifconfig.readline().strip()
+                    raise GetIPError('Not implemented OS: ' + sys.platform)
         if not IP or not isinstance(IP, str) or not IP.startswith('127.'):
             raise GetIPError("Can't retrieve IP address.")
-        return IP
+        else:
+            return IP
 
     def _get_MAC(self):
         """Internal function. Returns MAC address."""
@@ -161,7 +185,7 @@ class User:
             'passwd': self.password,
         }
         with warnings.catch_warnings(): # Catch warning
-            warnings.filterwarnings('ignore', category=InsecureRequestWarning)
+            warnings.simplefilter('ignore', category=InsecureRequestWarning)
             return self.post(url, data=form_data, verify=False)
 
     def _login_blue_auth(self):
@@ -180,7 +204,7 @@ class User:
                 'authServ': authServ
             }
             with warnings.catch_warnings(): # Catch warning
-                warnings.filterwarnings(
+                warnings.simplefilter(
                     'ignore', category=InsecureRequestWarning)
                 return self.post('http://192.168.1.1:8181/',
                     data=form_data, verify=False)

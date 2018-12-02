@@ -4,5 +4,5 @@ from .exceptions import *
 from .page import *
 from .user import *
 
-__all__ = ['LoginError', 'LoginConnectionError', 'WrongUsernameOrPassword',
+__all__ = ['Error', 'LoginConnectionError', 'WrongUsernameOrPassword',
     'GetUsernamePasswordError', 'GetIPError', 'User', 'Page']

@@ -53,8 +53,7 @@ class Page:
     def CDATA(self):
         """Gets the CDATA of this page."""
         return json.loads(re.findall(
-            r'//<!\[CDATA\[\n\$Config=(.*?);\n//\]\]>',
-            self.text())[0])
+            r'//<!\[CDATA\[\n\$Config=(.*?);\n//\]\]>', self.text())[0])
 
     def form(self, *find_args, **find_kwargs):
         """Gets HTML element form as bs4.element.Tag of this page.
