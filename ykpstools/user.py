@@ -9,10 +9,9 @@ import hashlib
 import hmac
 import json
 import os
-import re
 import socket
 import sys
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse, parse_qs
 from urllib3.exceptions import InsecureRequestWarning
 import uuid
 import warnings
@@ -90,7 +89,8 @@ class User:
     def _prompt(self):
         """Internal function."""
         username = input('Enter username (e.g. s12345): ').strip()
-        password = getpass.getpass('Password for %s: ' % username).strip()
+        password = getpass.getpass(
+            'Password for {}: '.format(username)).strip()
         return username, password
 
     def _get_IP(self):
@@ -166,23 +166,24 @@ class User:
 
     def _login_blue_auth(self):
         """Internal function."""
-        web = self.get('http://www.apple.com/cn/', allow_redirects=True)
-        oldURL_and_authServ = re.compile(
-            r'oldURL=([^&]+)&authServ=(.+)').findall(unquote(web.url()))
-        if oldURL_and_authServ:
-            oldURL, authServ = oldURL_and_authServ[0]
+        redirect = self.get('http://www.apple.com/cn/', allow_redirects=True)
+        query = parse_qs(redirect.url().query)
+        oldURL = query.get('oldURL')
+        authServ = query.get('authServ')
+        if oldURL is None or authServ is None:
+            return redirect
         else:
-            return None
-        form_data = {
-            'txtUserName': self.username,
-            'txtPasswd': self.password,
-            'oldURL': oldURL,
-            'authServ': authServ
-        }
-        with warnings.catch_warnings(): # Catch warning
-            warnings.filterwarnings('ignore', category=InsecureRequestWarning)
-            return self.post('http://192.168.1.1:8181/',
-                data=form_data, verify=False)
+            form_data = {
+                'txtUserName': self.username,
+                'txtPasswd': self.password,
+                'oldURL': oldURL,
+                'authServ': authServ
+            }
+            with warnings.catch_warnings(): # Catch warning
+                warnings.filterwarnings(
+                    'ignore', category=InsecureRequestWarning)
+                return self.post('http://192.168.1.1:8181/',
+                    data=form_data, verify=False)
 
     def ps_login(self):
         """Returns login to Powerschool Page."""
@@ -218,8 +219,7 @@ class User:
             # If already logged in
             return redirect_to_ms.submit(redirect_to_ms)
         ms_login_CDATA = redirect_to_ms.CDATA()
-        print(ms_login_CDATA)
-        ms_get_credential_type_payload = {
+        ms_get_credential_type_payload = json.dumps({ # have to use json
             'username': self.username + '@ykpaoschool.cn',
             'isOtherIdpSupported': True,
             'checkPhones': False,
@@ -229,11 +229,11 @@ class User:
             'originalRequest': ms_login_CDATA['sCtx'],
             'country': ms_login_CDATA['country'],
             'flowToken': ms_login_CDATA['sFT'],
-        }
+        })
         ms_get_credential_type = self.post(
             'https://login.microsoftonline.com'
             '/common/GetCredentialType?mkt=en-US',
-            data=json.dumps(ms_get_credential_type_payload)
+            data=ms_get_credential_type_payload
         ).json()
         adfs_login = self.get(
             ms_get_credential_type['Credentials']['FederationRedirectUrl'])

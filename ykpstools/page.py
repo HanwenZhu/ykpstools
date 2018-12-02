@@ -7,7 +7,7 @@ __all__ = ['Page']
 import functools
 import json
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -52,9 +52,9 @@ class Page:
 
     def CDATA(self):
         """Gets the CDATA of this page."""
-        expression = re.compile(r'//<!\[CDATA\[\n\$Config=(.*);\n//\]\]>')
-        return json.loads(expression.findall(
-            self.soup().find(text=expression).string)[0])
+        return json.loads(re.findall(
+            r'//<!\[CDATA\[\n\$Config=(.*?);\n//\]\]>',
+            self.text())[0])
 
     def form(self, *find_args, **find_kwargs):
         """Gets HTML element form as bs4.element.Tag of this page.
@@ -91,10 +91,7 @@ class Page:
             return self
         else:
             method = form.get('method')
-            action = form.get('action')
-            if action.startswith('/'):
-                url = self.url()
-                action = url.scheme + '://' + url.netloc + action
+            action = urljoin(self.url().geturl(), form.get('action'))
             return self.user.request(method, action,
                 data=self.payload(updates, *find_args, **find_kwargs))
 
@@ -103,5 +100,6 @@ class Page:
         """Returns response in json format.
 
         *args: arguments for requests.Response.json,
-        *kwargs: keyword arguments for requests.Response.json."""
+        *kwargs: keyword arguments for requests.Response.json.
+        """
         return self.response.json(*args, **kwargs)

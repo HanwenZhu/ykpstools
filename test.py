@@ -12,8 +12,12 @@ user = yt.User(prompt=True)
 # YKPS site Wi-Fi authorization
 try:
     user.auth()
-except yt.LoginConnectionError as error:
+except yt.LoginError as error:
     print("Can't log in to school Wi-Fi.\n")
+
+powerschool_learning = user.psl_login().soup()
+true_name = powerschool_learning.find('div', id='navbarowner').string.strip()
+print('Hello, {}.\n'.format(true_name))
 
 # Login to Powerschool (here I use html.parser because lxml has wierd issues)
 powerschool = user.ps_login().soup(features='html.parser')
@@ -36,5 +40,5 @@ grades = [
 
 # Lowest score (ouch!)
 lowest = grades.index(max(grades)) # max(ord) <= e.g. ord('E') > ord('A')
-print('Your class with lowest score is: %s.\n' % names[lowest])
-print('Score: %s' % classes[lowest].find('a', class_='bold').string)
+print('Your class with lowest score is: {}.\n'.format(names[lowest]))
+print('Score: {}'.format(classes[lowest].find('a', class_='bold').string))
