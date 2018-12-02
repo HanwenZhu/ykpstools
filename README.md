@@ -3,13 +3,19 @@ Tools &amp; utilities associated with online logins of YKPS.
 
 ## Dependencies
 YKPS Tools require a distribution of `Python 3.x` installed.
-Install dependencies within Python for YKPS Tools:
+Install dependencies for YKPS Tools:
 ```sh
 python3 -m pip install -r requirements.txt
 ```
 
-## Quick Start
-In Python shell, at repository directory:
+## Demonstration
+### Test
+To test what the repository can do:
+```sh
+python3 test.py
+```
+### Example
+In Python shell:
 ```python
 >>> import ykpstools as yt
 >>>
