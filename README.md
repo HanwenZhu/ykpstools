@@ -12,7 +12,7 @@ python3 -m pip install -r requirements.txt
 ### Test
 To test what the repository can do:
 ```sh
-python3 test.py
+python3 -m ykpstools
 ```
 ### Example
 In Python shell:
