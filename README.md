@@ -13,6 +13,7 @@ YKPS Tools has the following tools:
 ### Dependencies
 YKPS Tools depends on:
 - A distribution of **Python3.x** ([Python](https://www.python.org/downloads/), [Anaconda](https://www.anaconda.com/downloads/), etc.)
+(See [Insights / Dependency graph](https://github.com/icreiuheciijc/ykpstools/network/dependencies))
 - [requests / **requests**](https://github.com/requests/requests)
 - [waylan / **beautifulsoup**](https://github.com/waylan/beautifulsoup)
 - [lxml / **lxml**](https://github.com/lxml/lxml)
