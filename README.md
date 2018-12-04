@@ -14,8 +14,8 @@ YKPS Tools has the following tools:
 YKPS Tools depends on:
 - A distribution of _Python3.x_ ([Python](https://www.python.org/downloads/), [Anaconda](https://www.anaconda.com/downloads/), etc.)
 - [requests](http://python-requests.org/) (PyPI: [requests](https://pypi.org/project/requests/), Github: [requests/requests](https://github.com/requests/requests))
-- [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/) (PyPI: [beautifulsoup4](https://pypi.org/project/beautifulsoup4/))
-- [lxml](https://lxml.de/) (PyPI: [lxml](https://pypi.org/project/lxml/))
+- [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/) (PyPI: [beautifulsoup4](https://pypi.org/project/beautifulsoup4/), Github: [waylan/beautifulsoup](https://github.com/waylan/beautifulsoup))
+- [lxml](https://lxml.de/) (PyPI: [lxml](https://pypi.org/project/lxml/), Github: [lxml/lxml](https://github.com/lxml/lxml))
 
 ### Installation on Python
 YKPS Tools can be installed using `pip` in shell:
