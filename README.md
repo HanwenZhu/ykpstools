@@ -5,6 +5,10 @@ YKPS Tools require a distribution of `Python 3.x` installed.
 ## Installation
 YKPS Tools can be installed by using `pip` in shell:
 ```sh
+python3 -m pip install ykpstools
+```
+Or, to get the newest version of YKPS Tools:
+```sh
 python3 -m pip install git+https://github.com/icreiuheciijc/ykpstools.git
 ```
 
