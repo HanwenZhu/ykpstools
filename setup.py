@@ -22,7 +22,7 @@ setuptools.setup(
     license='MIT',
     packages=['ykpstools'],
     classifiers=[
-        'Development Status :: 1 - Planning'
+        'Development Status :: 1 - Planning',
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
