@@ -2,6 +2,7 @@
 
 __all__ = ['Error', 'LoginConnectionError', 'WrongUsernameOrPassword',
     'GetUsernamePasswordError', 'GetIPError']
+__author__ = 'Thomas Zhu'
 
 class Error(Exception):
     """The most basic ykpstools Exception.

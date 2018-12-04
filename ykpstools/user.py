@@ -1,6 +1,7 @@
 """Class 'User' that stores its user info and functions."""
 
 __all__ = ['User']
+__author__ = 'Thomas Zhu'
 
 import base64
 import functools
@@ -54,7 +55,7 @@ class User:
                 if prompt:
                     try:
                         self.username, self.password = self._load()
-                    except GetUsernamePasswordError as error:
+                    except GetUsernamePasswordError:
                         self.username, self.password = self._prompt()
                 else:
                     self.username, self.password = self._load()
@@ -108,11 +109,13 @@ class User:
                     raise GetIPError('Not implemented OS: ' + sys.platform)
                 elif (sys.platform == 'darwin'
                     or sys.platform.startswith('linux')):
+                    macos_interfaces = ['en0', 'en1']
+                    linux_interfaces = ['eth0', 'eth1', 'eth2', 'wlan0',
+                        'wlan1', 'wifi0', 'ath0', 'ath1', 'ppp0']
                     if sys.platform == 'darwin':
-                        interfaces = ['en0', 'en1']
+                        interfaces = macos_interfaces + linux_interfaces
                     elif sys.platform.startswith('linux'):
-                        interfaces = ['eth0', 'eth1', 'eth2', 'wlan0', 'wlan1',
-                        'wifi0', 'ath0', 'ath1', 'ppp0']
+                        interfaces = linux_interfaces + macos_interfaces
                     for interface in interfaces:
                         try:
                             ifconfig = str(subprocess.check_output(
@@ -130,7 +133,7 @@ class User:
                         raise GetIPError("Can't retrieve IP address.")
                 else:
                     raise GetIPError('Not implemented OS: ' + sys.platform)
-        if not IP or not isinstance(IP, str) or not IP.startswith('127.'):
+        if not IP or not isinstance(IP, str) or IP.startswith('127.'):
             raise GetIPError("Can't retrieve IP address.")
         else:
             return IP

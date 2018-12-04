@@ -1,6 +1,7 @@
 """For demonstration and testing purposes."""
 
-print(__doc__ + '\n')
+print(__doc__, end='\n\n')
+__author__ = 'Thomas Zhu'
 
 import re
 
@@ -13,9 +14,13 @@ user = yt.User(prompt=True)
 
 # YKPS site Wi-Fi authorization
 try:
+    print('Trying to log in to school Wi-Fi...')
     user.auth()
 except yt.Error as error:
     print("Can't log in to school Wi-Fi.\n")
+    print(str(error))
+else:
+    print('Success.\n')
 
 # Login to Powerschool Learning
 powerschool_learning = user.psl_login().soup()

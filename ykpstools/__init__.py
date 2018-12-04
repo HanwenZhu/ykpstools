@@ -3,6 +3,7 @@
 __all__ = ['Error', 'LoginConnectionError', 'WrongUsernameOrPassword',
     'GetUsernamePasswordError', 'GetIPError', 'User', 'Page', 'ps_login',
     'ms_login', 'psl_login']
+__author__ = 'Thomas Zhu'
 
 from .exceptions import *
 from .page import *

@@ -3,6 +3,7 @@ functions.
 """
 
 __all__ = ['Page']
+__author__ = 'Thomas Zhu'
 
 import functools
 import json
