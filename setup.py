@@ -5,12 +5,6 @@ with open('README.md', 'r') as README:
     long_description = README.read()
 
 
-with open('requirements.txt', 'r') as requirements:
-    install_requires = [line.strip()
-        for line in requirements.readlines()
-        if line.strip() != '']
-
-
 setuptools.setup(
     name='ykpstools',
     version='1.0.0',
@@ -27,6 +21,10 @@ setuptools.setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
     ],
-    install_requires=install_requires,
+    install_requires=[
+        'requests',
+        'beautifulsoup4',
+        'lxml',
+    ],
     python_requires='>=3',
 )
