@@ -10,6 +10,11 @@ from .page import *
 from .user import *
 
 
+def auth(*args, **kwargs):
+    """A simple wrapper for User(*args, **kwargs).auth()."""
+    return User(*args, **kwargs).auth()
+
+
 def ps_login(*args, **kwargs):
     """A simple wrapper for User(*args, **kwargs).ps_login()."""
     return User(*args, **kwargs).ps_login()

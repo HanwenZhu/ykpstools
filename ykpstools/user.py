@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -66,6 +67,8 @@ class User:
                     raise GetUsernamePasswordError(
                         'Username or password unprovided, while not allowed'
                         'to load or prompt for username or password.')
+        self.IP = self._get_IP()
+        self.MAC = self._get_MAC()
 
     def _load(self):
         """Internal function.
@@ -89,29 +92,52 @@ class User:
         return username, password
 
     def _prompt(self):
-        """Internal function."""
+        """Internal function. Prompt inline for username and password."""
         username = input('Enter username (e.g. s12345): ').strip()
         password = getpass.getpass(
             'Password for {}: '.format(username)).strip()
         return username, password
 
+    def _is_valid_IP(self, IP):
+        """Internal function. Check if IP is valid internal IPv4 address."""
+        if (IP and isinstance(IP, str) and not IP.startswith('127.')
+            and re.match(r'\d{1-3}\.\d{1-3}\.\d{1-3}\.\d{1-3}', IP)):
+            return True
+        else:
+            return False
+
     def _get_IP(self):
-        """Internal function. Returns private IP address."""
+        """Internal function. Returns IP address in LAN."""
         try:
             IP = socket.gethostbyname(socket.gethostname())
-            assert not IP.startswith('127.')
+            assert self._is_valid_IP(IP)
         except (socket.error, AssertionError):
             try:
                 IP = socket.gethostbyname(socket.getfqdn())
-                assert not IP.startswith('127.')
+                assert self._is_valid_IP(IP)
             except (socket.error, AssertionError):
-                if sys.platform in ('win32', 'win16', 'dos'):
-                    raise GetIPError('Not implemented OS: ' + sys.platform)
+                if sys.platform in {'win32', 'win16', 'dos', 'cygwin'}:
+                    try:
+                        ipconfig = str(subprocess.check_output('ipconfig /all',
+                            shell=True)) # outputs bytes, hence 'str()'
+                    except subprocess.CalledProcessError as error:
+                        raise GetIPError(
+                            "Can't retrieve IP address.") from error
+                    else:
+                        for ipconfig_line in ipconfig.splitlines():
+                            line = ipconfig_line.strip()
+                            if re.search(r'[\s^]IP(?:v4)?[\s\:$]', line):
+                                # 'IP' or 'IPv4'
+                                IP = line[-1]
+                                if self._is_valid_IP(IP):
+                                    break
+                        else:
+                            raise GetIPError("Can't retrieve IP address.")
                 elif (sys.platform == 'darwin'
                     or sys.platform.startswith('linux')):
                     macos_interfaces = ['en0', 'en1']
-                    linux_interfaces = ['eth0', 'eth1', 'eth2', 'wlan0',
-                        'wlan1', 'wifi0', 'ath0', 'ath1', 'ppp0']
+                    linux_interfaces = ['eth0', 'wlan0', 'wifi0', 'eth1',
+                        'eth2', 'wlan1', 'ath0', 'ath1', 'ppp0']
                     if sys.platform == 'darwin':
                         interfaces = macos_interfaces + linux_interfaces
                     elif sys.platform.startswith('linux'):
@@ -120,29 +146,26 @@ class User:
                         try:
                             ifconfig = str(subprocess.check_output(
                                 'ifconfig {} | grep "inet "'.format(interface),
-                                shell=True))
-                        except subprocess.CalledProcessError:
+                                shell=True)) # outputs bytes, hence 'str()'
+                            IP = ifconfig.splitlines()[0].strip().split()[1]
+                            assert self._is_valid_IP(IP)
+                        except (subprocess.CalledProcessError, AssertionError):
                             continue
                         else:
-                            IP = ifconfig.splitlines()[0].strip().split()[1]
-                            if IP.startswith('127.'):
-                                continue
-                            else:
-                                break
+                            break
                     else:
                         raise GetIPError("Can't retrieve IP address.")
                 else:
                     raise GetIPError('Not implemented OS: ' + sys.platform)
-        if not IP or not isinstance(IP, str) or IP.startswith('127.'):
+        if not self._is_valid_IP(IP):
             raise GetIPError("Can't retrieve IP address.")
         else:
             return IP
 
     def _get_MAC(self):
         """Internal function. Returns MAC address."""
-        MAC = ':'.join([uuid.UUID(int=uuid.getnode()).hex[-12:].upper()[i:i+2]
-            for i in range(0, 11, 2)])
-        return MAC
+        MAC = uuid.UUID(int=uuid.getnode()).hex[-12:].upper()
+        return ':'.join([MAC[i:i+2] for i in range(0, 11, 2)])
 
     def _user_connection_error_wrapper(function):
         """Internal decorator. Raise LoginConnectionError if can't connect."""
@@ -179,9 +202,9 @@ class User:
     def _login_web_auth(self):
         """Internal function."""
         url = 'https://auth.ykpaoschool.cn/portalAuthAction.do'
-        form_data = {
-            'wlanuserip': self._get_IP(),
-            'mac': self._get_MAC(),
+        payload = {
+            'wlanuserip': self.IP,
+            'mac': self.MAC,
             'wlanacname': 'hh1u6p',
             'wlanacIp': '192.168.186.2',
             'userid': self.username,
@@ -189,7 +212,7 @@ class User:
         }
         with warnings.catch_warnings(): # Catch warning
             warnings.simplefilter('ignore', category=InsecureRequestWarning)
-            return self.post(url, data=form_data, verify=False)
+            return self.post(url, data=payload, verify=False)
 
     def _login_blue_auth(self):
         """Internal function."""
@@ -200,7 +223,7 @@ class User:
         if oldURL is None or authServ is None:
             return redirect
         else:
-            form_data = {
+            payload = {
                 'txtUserName': self.username,
                 'txtPasswd': self.password,
                 'oldURL': oldURL,
@@ -210,7 +233,7 @@ class User:
                 warnings.simplefilter(
                     'ignore', category=InsecureRequestWarning)
                 return self.post('http://192.168.1.1:8181/',
-                    data=form_data, verify=False)
+                    data=payload, verify=False)
 
     def ps_login(self):
         """Returns login to Powerschool Page."""
