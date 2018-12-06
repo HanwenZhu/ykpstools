@@ -168,7 +168,7 @@ class User:
         MAC = uuid.UUID(int=uuid.getnode()).hex[-12:].upper()
         return ':'.join([MAC[i:i+2] for i in range(0, 11, 2)])
 
-    def _user_connection_error_wrapper(function):
+    def _connection_error_wrapper(function):
         """Internal decorator. Raise LoginConnectionError if can't connect."""
         @functools.wraps(function)
         def wrapped_function(*args, **kwargs):
@@ -178,63 +178,32 @@ class User:
                 raise LoginConnectionError(str(error)) from error
         return wrapped_function
 
-    @_user_connection_error_wrapper
+    @_connection_error_wrapper
     @functools.wraps(requests.Session.request)
     def request(self, *args, **kwargs):
         return Page(self, self.session.request(*args, **kwargs))
 
-    @_user_connection_error_wrapper
+    @_connection_error_wrapper
     @functools.wraps(requests.Session.get)
     def get(self, *args, **kwargs):
         return Page(self, self.session.get(*args, **kwargs))
 
-    @_user_connection_error_wrapper
+    @_connection_error_wrapper
     @functools.wraps(requests.Session.post)
     def post(self, *args, **kwargs):
         return Page(self, self.session.post(*args, **kwargs))
 
     def auth(self):
-        """Logins to YKPS Wi-Fi.
-        Derived from: https://github.com/yu-george/AutoAuth-YKPS/
-        """
-        self._login_web_auth()
-        self._login_blue_auth()
-
-    def _login_web_auth(self):
-        """Internal function."""
-        url = 'https://auth.ykpaoschool.cn/portalAuthAction.do'
+        """Logins to YKPS Wi-Fi."""
         payload = {
-            'wlanuserip': self.IP,
-            'mac': self.MAC,
-            'wlanacname': 'hh1u6p',
-            'wlanacIp': '192.168.186.2',
-            'userid': self.username,
-            'passwd': self.password,
+            'wlanuserip': self.IP, 'mac': self.MAC,
+            'wlanacname': 'hh1u6p', 'wlanacIp': '192.168.186.2',
+            'userid': self.username, 'passwd': self.password
         }
-        with warnings.catch_warnings(): # Catch warning
+        with warnings.catch_warnings(): # Catch InsecureRequestWarning
             warnings.simplefilter('ignore', category=InsecureRequestWarning)
-            return self.post(url, data=payload, verify=False)
-
-    def _login_blue_auth(self):
-        """Internal function."""
-        redirect = self.get('http://www.apple.com/cn/', allow_redirects=True)
-        query = parse_qs(redirect.url().query)
-        oldURL = query.get('oldURL')
-        authServ = query.get('authServ')
-        if oldURL is None or authServ is None:
-            return redirect
-        else:
-            payload = {
-                'txtUserName': self.username,
-                'txtPasswd': self.password,
-                'oldURL': oldURL,
-                'authServ': authServ
-            }
-            with warnings.catch_warnings(): # Catch warning
-                warnings.simplefilter(
-                    'ignore', category=InsecureRequestWarning)
-                return self.post('http://192.168.1.1:8181/',
-                    data=payload, verify=False)
+            return self.post('https://auth.ykpaoschool.cn/portalAuthAction.do',
+                data=payload, verify=False)
 
     def ps_login(self):
         """Returns login to Powerschool Page."""
@@ -254,7 +223,8 @@ class User:
                     ).digest()).replace(b'=', b''), hashlib.md5).hexdigest(),
             'ldappassword': self.password if 'ldappassword' in payload else ''
         }
-        return ps_login.submit(updates=payload_updates, id='LoginForm')
+        return ps_login.submit(
+            updates=payload_updates, find_kwargs={'id': 'LoginForm'})
 
     def ms_login(self, redirect_to_ms=None):
         """Returns login to Microsoft Page.
@@ -268,7 +238,7 @@ class User:
             redirect_to_ms = self.get('https://login.microsoftonline.com/')
         if len(redirect_to_ms.text().splitlines()) == 1:
             # If already logged in
-            return redirect_to_ms.submit(redirect_to_ms)
+            return redirect_to_ms.submit()
         ms_login_CDATA = redirect_to_ms.CDATA()
         ms_get_credential_type_payload = json.dumps({ # have to use json
             'username': self.username + '@ykpaoschool.cn',

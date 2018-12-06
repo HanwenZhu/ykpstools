@@ -71,29 +71,36 @@ class Page:
         *find_args: arguments for BeautifulSoup.find('form'),
         **find_kwargs: keyword arguments for BeautifulSoup.find('form').
         """
-        payload = {
-            i.get('name'): i.get('value')
-            for i in self.form(
-                *find_args, **find_kwargs).find_all('input')
-            if i.get('name') is not None}
-        payload.update(updates)
-        return payload
+        form = self.form(*find_args, **find_kwargs)
+        if form is None:
+            return updates
+        else:
+            payload = {
+                i.get('name'): i.get('value')
+                for i in form.find_all('input')
+                if i.get('name') is not None}
+            payload.update(updates)
+            return payload
 
-    def submit(self, updates={}, *find_args, **find_kwargs):
+    def submit(self, updates={}, find_args=(), find_kwargs={}, *args,
+        **kwargs):
         """Submit form from page.
         
         updates: updates to payload,
-        *find_args: arguments for BeautifulSoup.find('form'),
-        **find_kwargs: keyword arguments for BeautifulSoup.find('form').
+        find_args: arguments for BeautifulSoup.find('form'),
+        find_kwargs: keyword arguments for BeautifulSoup.find('form'),
+        *args: arguments for User.request,
+        **kwargs: keyword arguments for User.request.
         """
-        form = self.form()
+        form = self.form(*find_args, **find_kwargs)
         if form is None:
             return self
         else:
             method = form.get('method')
             action = urljoin(self.url().geturl(), form.get('action'))
+            payload = self.payload(updates, *find_args, **find_kwargs)
             return self.user.request(method, action,
-                data=self.payload(updates, *find_args, **find_kwargs))
+                data=payload, *args, **kwargs)
 
     @functools.wraps(requests.Response.json)
     def json(self, *args, **kwargs):
