@@ -68,7 +68,8 @@ class User:
                         'Username or password unprovided, while not allowed'
                         'to load or prompt for username or password.')
 
-    def _load(self):
+    @staticmethod
+    def _load():
         """Internal function.
         Derived from: https://github.com/yu-george/AutoAuth-YKPS/
         """
@@ -89,15 +90,17 @@ class User:
                 "'usr.dat' contains invalid username or password.") 
         return username, password
 
-    def _prompt(self):
+    @staticmethod
+    def _prompt():
         """Internal function. Prompt inline for username and password."""
         username = input('Enter username (e.g. s12345): ').strip()
         password = getpass.getpass(
             'Password for {}: '.format(username)).strip()
         return username, password
 
+    @staticmethod
     @property
-    def IP(self):
+    def IP():
         """Internal function. Returns IP address in LAN."""
         def _is_valid_IP(IP):
             """Internal function. Check if IP is internal IPv4 address."""
@@ -162,8 +165,9 @@ class User:
         else:
             return IP
 
+    @staticmethod
     @property
-    def MAC(self):
+    def MAC():
         """Internal function. Returns MAC address."""
         MAC = uuid.UUID(int=uuid.getnode()).hex[-12:].upper()
         return ':'.join([MAC[i:i+2] for i in range(0, 11, 2)])
@@ -195,15 +199,18 @@ class User:
 
     def auth(self):
         """Logins to YKPS Wi-Fi."""
-        payload = {
-            'wlanuserip': self.IP, 'mac': self.MAC,
-            'wlanacname': 'hh1u6p', 'wlanacIp': '192.168.186.2',
-            'userid': self.username, 'passwd': self.password
-        }
+        ext_portal = self.get('http://1.1.1.1:8000/ext_portal.magi')
+        # html is like <script>window.location="url"</script>, hence
+        url = ext_portal.text().split('"')[1] 
+        if url == 'http://1.1.1.1:8000/logout.htm':
+            return ext_portal
         with warnings.catch_warnings(): # Catch InsecureRequestWarning
             warnings.simplefilter('ignore', category=InsecureRequestWarning)
-            return self.post('https://auth.ykpaoschool.cn/portalAuthAction.do',
-                data=payload, verify=False)
+            portal = self.get(url, verify=False)
+        updates = {'userid': self.username, 'passwd': self.password}
+        with warnings.catch_warnings(): # Catch InsecureRequestWarning
+            warnings.simplefilter('ignore', category=InsecureRequestWarning)
+            return portal.submit(updates=updates, verify=False)
 
     def ps_login(self):
         """Returns login to Powerschool Page."""
