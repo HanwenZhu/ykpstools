@@ -98,7 +98,6 @@ class User:
             'Password for {}: '.format(username)).strip()
         return username, password
 
-    @staticmethod
     @property
     def IP():
         """Internal function. Returns IP address in LAN."""
@@ -165,7 +164,6 @@ class User:
         else:
             return IP
 
-    @staticmethod
     @property
     def MAC():
         """Internal function. Returns MAC address."""
@@ -207,9 +205,7 @@ class User:
         with warnings.catch_warnings(): # Catch InsecureRequestWarning
             warnings.simplefilter('ignore', category=InsecureRequestWarning)
             portal = self.get(url, verify=False)
-        updates = {'userid': self.username, 'passwd': self.password}
-        with warnings.catch_warnings(): # Catch InsecureRequestWarning
-            warnings.simplefilter('ignore', category=InsecureRequestWarning)
+            updates = {'userid': self.username, 'passwd': self.password}
             return portal.submit(updates=updates, verify=False)
 
     def ps_login(self):
