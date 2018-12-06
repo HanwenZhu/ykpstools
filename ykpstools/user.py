@@ -116,9 +116,8 @@ class User:
             except (socket.error, AssertionError):
                 if sys.platform in {'win32', 'win16', 'dos', 'cygwin'}:
                     try:
-                        # outputs bytes, hence 'str()'
-                        ipconfig = str(subprocess.check_output('ipconfig /all',
-                            shell=True, stderr=subprocess.DEVNULL))
+                        ipconfig = subprocess.check_output('ipconfig /all',
+                            shell=True, stderr=subprocess.DEVNULL).decode()
                     except subprocess.CalledProcessError as error:
                         raise GetIPError(
                             "Can't retrieve IP address.") from error
@@ -143,10 +142,9 @@ class User:
                         interfaces = linux_interfaces + macos_interfaces
                     for interface in interfaces:
                         try:
-                            # outputs bytes, hence 'str()'
-                            ifconfig = str(subprocess.check_output(
+                            ifconfig = subprocess.check_output(
                                 'ifconfig {} | grep "inet "'.format(interface),
-                                shell=True, stderr=subprocess.DEVNULL))
+                                shell=True, stderr=subprocess.DEVNULL).decode()
                             IP = ifconfig.splitlines()[0].strip().split()[1]
                             assert _is_valid_IP(IP)
                         except (subprocess.CalledProcessError,
