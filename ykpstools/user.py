@@ -67,8 +67,6 @@ class User:
                     raise GetUsernamePasswordError(
                         'Username or password unprovided, while not allowed'
                         'to load or prompt for username or password.')
-        self.IP = self._get_IP()
-        self.MAC = self._get_MAC()
 
     def _load(self):
         """Internal function.
@@ -98,28 +96,29 @@ class User:
             'Password for {}: '.format(username)).strip()
         return username, password
 
-    def _is_valid_IP(self, IP):
-        """Internal function. Check if IP is valid internal IPv4 address."""
-        if (IP and isinstance(IP, str) and not IP.startswith('127.')
-            and re.match(r'\d{1-3}\.\d{1-3}\.\d{1-3}\.\d{1-3}', IP)):
-            return True
-        else:
-            return False
-
-    def _get_IP(self):
+    @property
+    def IP(self):
         """Internal function. Returns IP address in LAN."""
+        def _is_valid_IP(IP):
+            """Internal function. Check if IP is internal IPv4 address."""
+            if (IP and isinstance(IP, str) and not IP.startswith('127.')
+                and re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', IP)):
+                return True
+            else:
+                return False
         try:
             IP = socket.gethostbyname(socket.gethostname())
-            assert self._is_valid_IP(IP)
+            assert _is_valid_IP(IP)
         except (socket.error, AssertionError):
             try:
                 IP = socket.gethostbyname(socket.getfqdn())
-                assert self._is_valid_IP(IP)
+                assert _is_valid_IP(IP)
             except (socket.error, AssertionError):
                 if sys.platform in {'win32', 'win16', 'dos', 'cygwin'}:
                     try:
+                        # outputs bytes, hence 'str()'
                         ipconfig = str(subprocess.check_output('ipconfig /all',
-                            shell=True)) # outputs bytes, hence 'str()'
+                            shell=True, stderr=subprocess.DEVNULL))
                     except subprocess.CalledProcessError as error:
                         raise GetIPError(
                             "Can't retrieve IP address.") from error
@@ -129,7 +128,7 @@ class User:
                             if re.search(r'[\s^]IP(?:v4)?[\s\:$]', line):
                                 # 'IP' or 'IPv4'
                                 IP = line[-1]
-                                if self._is_valid_IP(IP):
+                                if _is_valid_IP(IP):
                                     break
                         else:
                             raise GetIPError("Can't retrieve IP address.")
@@ -144,25 +143,29 @@ class User:
                         interfaces = linux_interfaces + macos_interfaces
                     for interface in interfaces:
                         try:
+                            # outputs bytes, hence 'str()'
                             ifconfig = str(subprocess.check_output(
                                 'ifconfig {} | grep "inet "'.format(interface),
-                                shell=True)) # outputs bytes, hence 'str()'
+                                shell=True, stderr=subprocess.DEVNULL))
                             IP = ifconfig.splitlines()[0].strip().split()[1]
-                            assert self._is_valid_IP(IP)
-                        except (subprocess.CalledProcessError, AssertionError):
+                            assert _is_valid_IP(IP)
+                        except (subprocess.CalledProcessError,
+                            AssertionError, IndexError):
                             continue
                         else:
                             break
                     else:
-                        raise GetIPError("Can't retrieve IP address.")
+                        raise GetIPError("Can't retrieve IP address. "
+                            'Maybe your network is disabled or disconnected?')
                 else:
                     raise GetIPError('Not implemented OS: ' + sys.platform)
-        if not self._is_valid_IP(IP):
+        if not _is_valid_IP(IP):
             raise GetIPError("Can't retrieve IP address.")
         else:
             return IP
 
-    def _get_MAC(self):
+    @property
+    def MAC(self):
         """Internal function. Returns MAC address."""
         MAC = uuid.UUID(int=uuid.getnode()).hex[-12:].upper()
         return ':'.join([MAC[i:i+2] for i in range(0, 11, 2)])
