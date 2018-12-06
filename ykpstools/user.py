@@ -38,8 +38,8 @@ class User:
         password=None: str, user's password, defaults to load or prompt,
         load=True: bool, try load username and password from local AutoAuth,
         prompt=False: bool, prompt for username and password if can't load,
-        session_args: tuple, arguments for requests.Session,
-        session_kwargs: dict, keyword arguments for requests.Session.
+        session_args=(): tuple, arguments for requests.Session,
+        session_kwargs={}: dict, keyword arguments for requests.Session.
         """
         self.session = requests.Session(*session_args, **session_kwargs)
         self.session.headers.update(
