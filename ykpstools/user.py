@@ -128,7 +128,7 @@ class User:
     #                         line = ipconfig_line.strip()
     #                         if re.search(r'[\s^]IP(?:v4)?[\s\:$]', line):
     #                             # 'IP' or 'IPv4'
-    #                             IP = line[-1]
+    #                             IP = line.split()[-1]
     #                             if _is_valid_IP(IP):
     #                                 break
     #                     else:
