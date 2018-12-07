@@ -22,7 +22,7 @@ YKPS Tools can be installed using `pip` in shell:
 ```sh
 python3 -m pip install --upgrade ykpstools
 ```
-Or, to get the newest version of YKPS Tools:
+Or, to get the newest version of YKPS Tools (recommended since it is still at an early stage of development):
 ```sh
 python3 -m pip install --upgrade git+https://github.com/icreiuheciijc/ykpstools.git
 ```

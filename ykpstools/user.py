@@ -30,10 +30,10 @@ class User:
 
     """Class 'User' that stores its user info and functions."""
 
-    def __init__(self, username=None, password=None, load=True,
+    def __init__(self, username=None, password=None, *, load=True,
         prompt=False, session_args=(), session_kwargs={}):
         """Initialize a User.
-
+        
         username=None: str, user's username, defaults to load or prompt,
         password=None: str, user's password, defaults to load or prompt,
         load=True: bool, try load username and password from local AutoAuth,
@@ -44,9 +44,9 @@ class User:
         self.session = requests.Session(*session_args, **session_kwargs)
         self.session.headers.update(
             {'User-Agent': ' '.join((
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6)',
+                'Mozilla/5.0 (compatible; Intel Mac OS X 10_13_6)',
                 'AppleWebKit/537.36 (KHTML, like Gecko)',
-                'Chrome/69.0.3497.100',
+                'Chrome/70.0.3538.110',
                 'Safari/537.36',
         ))})
         if username is not None and password is not None:
@@ -195,9 +195,10 @@ class User:
     def post(self, *args, **kwargs):
         return Page(self, self.session.post(*args, **kwargs))
 
-    def auth(self):
+    def auth(self, *args, **kwargs):
         """Logins to YKPS Wi-Fi."""
-        ext_portal = self.get('http://1.1.1.1:8000/ext_portal.magi')
+        ext_portal = self.get('http://1.1.1.1:8000/ext_portal.magi',
+            *args, **kwargs)
         # html is like <script>window.location="url"</script>, hence
         url = ext_portal.text().split('"')[1] 
         if url == 'http://1.1.1.1:8000/logout.htm':
@@ -226,18 +227,17 @@ class User:
                     ).digest()).replace(b'=', b''), hashlib.md5).hexdigest(),
             'ldappassword': self.password if 'ldappassword' in payload else ''
         }
-        return ps_login.submit(
-            updates=payload_updates, find_kwargs={'id': 'LoginForm'})
+        return ps_login.submit(updates=payload_updates)
 
     def ms_login(self, redirect_to_ms=None):
         """Returns login to Microsoft Page.
-
+        
         redirect_to_ms: requests.models.Response or str, the page that a login
                         page redirects to for Microsoft Office365 login,
-                        defaults to GET 'https://login.microsoftonline.com/'.
+                        defaults to
+                        self.get('https://login.microsoftonline.com/').
         """
-        if redirect_to_ms is None:
-            # Default if page not specified
+        if redirect_to_ms is None: # Default if page not specified
             redirect_to_ms = self.get('https://login.microsoftonline.com/')
         if len(redirect_to_ms.text().splitlines()) == 1:
             # If already logged in
@@ -261,8 +261,7 @@ class User:
         ).json()
         adfs_login = self.get(
             ms_get_credential_type['Credentials']['FederationRedirectUrl'])
-        adfs_login_payload = adfs_login.payload(
-            updates={
+        adfs_login_payload = adfs_login.payload(updates={
                 'ctl00$ContentPlaceHolder1$UsernameTextBox': self.username,
                 'ctl00$ContentPlaceHolder1$PasswordTextBox': self.password,
         })
@@ -315,4 +314,4 @@ class User:
         if psl_login.url().netloc == psl_url:
             # If already logged in
             return psl_login
-        return self.ms_login(redirect_to_ms=psl_login)
+        return self.ms_login(psl_login)

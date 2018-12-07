@@ -20,9 +20,9 @@ def ps_login(*args, **kwargs):
     return User(*args, **kwargs).ps_login()
 
 
-def ms_login(*args, **kwargs):
-    """A simple wrapper for User(*args, **kwargs).ms_login()."""
-    return User(*args, **kwargs).ms_login()
+def ms_login(redirect_to_ms=None, *args, **kwargs):
+    """A simple wrapper for User(*args, **kwargs).ms_login(redirect_to_ms)."""
+    return User(*args, **kwargs).ms_login(redirect_to_ms)
 
 
 def psl_login(*args, **kwargs):

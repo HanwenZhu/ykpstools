@@ -22,7 +22,7 @@ class Page:
 
     def __init__(self, user, response):
         """Initialize a Page.
-
+        
         user: a ykpstools.user.User instance, the User this page belongs to,
         response: a requests.Response instance.
         """
@@ -32,7 +32,7 @@ class Page:
 
     def url(self, *args, **kwargs):
         """Get current URL.
-
+        
         *args: arguments for urllib.parse.urlparse,
         *kwargs: keyword arguments for urllib.parse.urlparse."""
         return urlparse(self.response.url, *args, **kwargs)
@@ -44,8 +44,8 @@ class Page:
     @functools.wraps(BeautifulSoup)
     def soup(self, features='lxml', *args, **kwargs):
         """Returns bs4.BeautifulSoup of this page.
-
-        features='lxml': 'features' argument for BeautifulSoup,
+        
+        features='lxml': 'features' keyword argument for BeautifulSoup,
         *args: arguments for BeautifulSoup,
         **kwargs: keyword arguments for BeautifulSoup.
         """
@@ -58,7 +58,7 @@ class Page:
 
     def form(self, *find_args, **find_kwargs):
         """Gets HTML element form as bs4.element.Tag of this page.
-
+        
         *find_args: arguments for BeautifulSoup.find('form'),
         **find_kwargs: keyword arguments for BeautifulSoup.find('form').
         """
@@ -66,9 +66,9 @@ class Page:
 
     def payload(self, updates={}, *find_args, **find_kwargs):
         """Load completed form of this page.
-
-        updates: updates to payload,
+        
         *find_args: arguments for BeautifulSoup.find('form'),
+        updates: updates to payload,
         **find_kwargs: keyword arguments for BeautifulSoup.find('form').
         """
         form = self.form(*find_args, **find_kwargs)
@@ -82,8 +82,8 @@ class Page:
             payload.update(updates)
             return payload
 
-    def submit(self, updates={}, find_args=(), find_kwargs={}, *args,
-        **kwargs):
+    def submit(self, updates={}, find_args=(), find_kwargs={},
+        *args, **kwargs):
         """Submit form from page.
         
         updates: updates to payload,
@@ -105,7 +105,7 @@ class Page:
     @functools.wraps(requests.Response.json)
     def json(self, *args, **kwargs):
         """Returns response in json format.
-
+        
         *args: arguments for requests.Response.json,
         *kwargs: keyword arguments for requests.Response.json.
         """

@@ -15,10 +15,10 @@ user = yt.User(prompt=True)
 # YKPS site Wi-Fi authorization
 try:
     print('Trying to log in to school Wi-Fi...')
-    user.auth()
+    user.auth(timeout=5)
 except yt.Error as error:
-    print("Can't log in to school Wi-Fi.\n")
-    print(str(error))
+    print("Can't log in to school Wi-Fi.")
+    print(str(error).strip() + '\n')
 else:
     print('Success.\n')
 
