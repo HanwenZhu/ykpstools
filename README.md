@@ -1,5 +1,5 @@
 # YKPS Tools
-YKPS Tools, distributed under the [MIT License](/LICENSE), is a package containing tools &amp; utilities associated with online logins of YKPS. YKPS Tools requires a distribution of _Python 3.x_ installed. It is also published on [PyPI](https://pypi.org/project/ykpstools/).
+YKPS Tools is a package containing tools &amp; utilities associated with online logins of YKPS. It is distributed under the [MIT License](/LICENSE). YKPS Tools requires a distribution of _Python 3.x_ installed. It is also published on [PyPI](https://pypi.org/project/ykpstools/).
 
 ## Features
 YKPS Tools has the following tools:
