@@ -23,12 +23,12 @@ else:
     print('Success.\n')
 
 # Login to Powerschool Learning
-powerschool_learning = user.psl_login().soup()
+powerschool_learning = user.powerschool_learning().soup()
 true_name = powerschool_learning.find('div', id='navbarowner').string.strip()
 print('Hello, {}.\n'.format(true_name))
 
 # Login to Powerschool (here I use html.parser because lxml has wierd issues)
-powerschool = user.ps_login().soup(features='html.parser')
+powerschool = user.powerschool().soup(features='html.parser')
 
 # Parse all the class names and grades (code looks a bit complicated...)
 classes, names, grades = zip(*[

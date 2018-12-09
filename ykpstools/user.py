@@ -6,22 +6,16 @@ __author__ = 'Thomas Zhu'
 import base64
 import functools
 import getpass
-import hashlib
-import hmac
 import json
 import os
 import re
-import socket
-import subprocess
-import sys
 from urllib.parse import urlparse, parse_qs
 from urllib3.exceptions import InsecureRequestWarning
-import uuid
 import warnings
 
 import requests
 
-from .page import Page
+from .page import Page, PowerschoolPage, MicrosoftPage, PowerschoolLearningPage
 from .exceptions import (LoginConnectionError, WrongUsernameOrPassword,
     GetUsernamePasswordError, GetIPError)
 
@@ -181,18 +175,33 @@ class User:
         return wrapped_function
 
     @_connection_error_wrapper
-    @functools.wraps(requests.Session.request)
     def request(self, *args, **kwargs):
+        """Simple wrapper for
+        ykpstools.page.Page(self, self.session.request(*args, **kwargs)).
+
+        *args: arguments for self.session.request,
+        **kwargs: keyword arguments for self.session.request.
+        """
         return Page(self, self.session.request(*args, **kwargs))
 
     @_connection_error_wrapper
-    @functools.wraps(requests.Session.get)
     def get(self, *args, **kwargs):
+        """Simple wrapper for
+        ykpstools.page.Page(self, self.session.get(*args, **kwargs)).
+
+        *args: arguments for self.session.get,
+        **kwargs: keyword arguments for self.session.get.
+        """
         return Page(self, self.session.get(*args, **kwargs))
 
     @_connection_error_wrapper
-    @functools.wraps(requests.Session.post)
     def post(self, *args, **kwargs):
+        """Simple wrapper for
+        ykpstools.page.Page(self, self.session.post(*args, **kwargs)).
+
+        *args: arguments for self.session.post,
+        **kwargs: keyword arguments for self.session.post.
+        """
         return Page(self, self.session.post(*args, **kwargs))
 
     def auth(self, *args, **kwargs):
@@ -209,110 +218,20 @@ class User:
             updates = {'userid': self.username, 'passwd': self.password}
             return portal.submit(updates=updates, verify=False)
 
-    def ps_login(self):
+    def powerschool(self):
         """Returns login to Powerschool Page."""
-        ps_login = self.get(
-            'https://powerschool.ykpaoschool.cn/public/home.html')
-        if ps_login.url().path == '/guardian/home.html':
-            # If already logged in
-            return ps_login
-        payload = ps_login.payload()
-        payload_updates = {
-            'dbpw': hmac.new(payload['contextData'].encode('ascii'),
-                self.password.lower().encode('ascii'),
-                hashlib.md5).hexdigest(),
-            'account': self.username,
-            'pw': hmac.new(payload['contextData'].encode('ascii'),
-                base64.b64encode(hashlib.md5(self.password.encode('ascii')
-                    ).digest()).replace(b'=', b''), hashlib.md5).hexdigest(),
-            'ldappassword': self.password if 'ldappassword' in payload else ''
-        }
-        return ps_login.submit(updates=payload_updates)
+        return PowerschoolPage(self)
 
-    def ms_login(self, redirect_to_ms=None):
+    def microsoft(self, redirect_to_ms=None):
         """Returns login to Microsoft Page.
         
-        redirect_to_ms: requests.models.Response or str, the page that a login
+        redirect_to_ms: ykpstools.page.Page instance, the page that a login
                         page redirects to for Microsoft Office365 login,
                         defaults to
                         self.get('https://login.microsoftonline.com/').
         """
-        if redirect_to_ms is None: # Default if page not specified
-            redirect_to_ms = self.get('https://login.microsoftonline.com/')
-        if len(redirect_to_ms.text().splitlines()) == 1:
-            # If already logged in
-            return redirect_to_ms.submit()
-        ms_login_CDATA = redirect_to_ms.CDATA()
-        ms_get_credential_type_payload = json.dumps({ # have to use json
-            'username': self.username + '@ykpaoschool.cn',
-            'isOtherIdpSupported': True,
-            'checkPhones': False,
-            'isRemoteNGCSupported': False,
-            'isCookieBannerShown': False,
-            'isFidoSupported': False,
-            'originalRequest': ms_login_CDATA['sCtx'],
-            'country': ms_login_CDATA['country'],
-            'flowToken': ms_login_CDATA['sFT'],
-        })
-        ms_get_credential_type = self.post(
-            'https://login.microsoftonline.com'
-            '/common/GetCredentialType?mkt=en-US',
-            data=ms_get_credential_type_payload
-        ).json()
-        adfs_login = self.get(
-            ms_get_credential_type['Credentials']['FederationRedirectUrl'])
-        adfs_login_payload = adfs_login.payload(updates={
-                'ctl00$ContentPlaceHolder1$UsernameTextBox': self.username,
-                'ctl00$ContentPlaceHolder1$PasswordTextBox': self.password,
-        })
-        adfs_login_form_url = adfs_login.form().get('action')
-        if urlparse(adfs_login_form_url).netloc == '':
-            # If intermediate page exists
-            adfs_intermediate_url = (
-                'https://adfs.ykpaoschool.cn' + adfs_login_form_url)
-            adfs_intermediate = self.post(adfs_intermediate_url,
-                data=adfs_login_payload)
-            adfs_intermediate_payload = adfs_intermediate.payload()
-            back_to_ms_url = adfs_intermediate.form().get('action')
-            if urlparse(back_to_ms_url).netloc == '':
-                # If stays in adfs, username or password is incorrect
-                raise WrongUsernameOrPassword(
-                    'Incorrect username or password.')
-        else:
-            # If intermediate page does not exist
-            back_to_ms_url = adfs_login_form_url
-            adfs_intermediate_payload = adfs_login_payload
-        ms_confirm = self.post(back_to_ms_url, data=adfs_intermediate_payload)
-        if ms_confirm.url().netloc != 'login.microsoftonline.com':
-            # If ms_confirm is skipped, sometimes happens
-            return ms_confirm
-        ms_confirm_CDATA = ms_confirm.CDATA()
-        ms_confirm_payload = {
-            'LoginOptions': 0,
-            'ctx': ms_confirm_CDATA['sCtx'],
-            'hpgrequestid': ms_confirm_CDATA['sessionId'],
-            'flowToken': ms_confirm_CDATA['sFT'],
-            'canary': ms_confirm_CDATA['canary'],
-            'i2': None,
-            'i17': None,
-            'i18': None,
-            'i19': 66306,
-        }
-        ms_out_url = 'https://login.microsoftonline.com/kmsi'
-        ms_out = self.post(ms_out_url, data=ms_confirm_payload)
-        if ms_out.url().geturl() in ms_out_url:
-            # If encounters 'Working...' page
-            return ms_out.submit()
-        else:
-            return ms_out
+        return MicrosoftPage(self, redirect_to_ms)
 
-    def psl_login(self):
+    def powerschool_learning(self):
         """Returns login to Powerschool Learning Page."""
-        psl_url = 'ykpaoschool.learning.powerschool.com'
-        psl_login = self.get(
-            'https://' + psl_url + '/do/oauth2/office365_login')
-        if psl_login.url().netloc == psl_url:
-            # If already logged in
-            return psl_login
-        else:
-            return self.ms_login(psl_login)
+        return PowerschoolLearningPage(self)

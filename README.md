@@ -47,7 +47,7 @@ In Python shell:
 >>> import ykpstools as yt
 >>>
 >>> # Login to Powerschool Learning
->>> page = yt.User(prompt=True).psl_login()
+>>> page = yt.powerschool_learning(prompt=True)
 >>> # Print html
 >>> page.soup().find('div', id='navbarowner').get_text(strip=True)
 *Your name should appear here*

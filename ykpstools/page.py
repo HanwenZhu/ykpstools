@@ -2,10 +2,14 @@
 functions.
 """
 
-__all__ = ['Page']
+__all__ = ['Page', 'PowerschoolPage', 'MicrosoftPage',
+    'PowerschoolLearningPage']
 __author__ = 'Thomas Zhu'
 
+import base64
 import functools
+import hashlib
+import hmac
 import json
 import re
 from urllib.parse import urlparse, urljoin
@@ -41,7 +45,6 @@ class Page:
         """Returns response text."""
         return self.response.text
 
-    @functools.wraps(BeautifulSoup)
     def soup(self, features='lxml', *args, **kwargs):
         """Returns bs4.BeautifulSoup of this page.
         
@@ -102,7 +105,6 @@ class Page:
             return self.user.request(method, action,
                 data=payload, *args, **kwargs)
 
-    @functools.wraps(requests.Response.json)
     def json(self, *args, **kwargs):
         """Returns response in json format.
         
@@ -110,3 +112,147 @@ class Page:
         *kwargs: keyword arguments for requests.Response.json.
         """
         return self.response.json(*args, **kwargs)
+
+
+class PowerschoolPage(Page):
+
+    """Class 'PowerschoolPage' inherits and adds on specific initialization and
+    attributes for Powerschool to 'ykpstools.page.Page'.
+    """
+
+    def __init__(self, user):
+        """Log in to Powerschool to initialize.
+        
+        user: a ykpstools.user.User instance, the User this page belongs to.
+        """
+        ps_login = user.get(
+            'https://powerschool.ykpaoschool.cn/public/home.html')
+        if ps_login.url().path == '/guardian/home.html': # If already logged in
+            response = ps_login.response
+        else:
+            payload = ps_login.payload()
+            payload_updates = {
+                'dbpw': hmac.new(payload['contextData'].encode('ascii'),
+                    user.password.lower().encode('ascii'),
+                    hashlib.md5).hexdigest(),
+                'account': user.username,
+                'pw': hmac.new(payload['contextData'].encode('ascii'),
+                    base64.b64encode(hashlib.md5(user.password.encode('ascii')
+                        ).digest()).replace(b'=', b''),
+                    hashlib.md5).hexdigest(),
+                'ldappassword': (user.password if 'ldappassword' in payload
+                    else '')
+            }
+            response = ps_login.submit(updates=payload_updates).response
+        super().__init__(user, response)
+
+
+class MicrosoftPage(Page):
+
+    """Class 'MicrosoftPage' inherits and adds on specific initialization and
+    attributes for Microsoft to 'ykpstools.page.Page'.
+    """
+
+    def __init__(self, user, redirect_to_ms=None):
+        """Log in to Microsoft to initialize.
+        
+        user: a ykpstools.user.User instance, the User this page belongs to,
+        redirect_to_ms: requests.models.Response or str, the page that a login
+                        page redirects to for Microsoft Office365 login,
+                        defaults to
+                        user.get('https://login.microsoftonline.com/').
+        """
+        if redirect_to_ms is None: # Default if page not specified
+            redirect_to_ms = user.get('https://login.microsoftonline.com/')
+        if len(redirect_to_ms.text().splitlines()) == 1:
+            # If already logged in
+            response = redirect_to_ms.submit().response
+        else:
+            ms_login_CDATA = redirect_to_ms.CDATA()
+            ms_get_credential_type_payload = json.dumps({ # have to use json
+                'username': user.username + '@ykpaoschool.cn',
+                'isOtherIdpSupported': True,
+                'checkPhones': False,
+                'isRemoteNGCSupported': False,
+                'isCookieBannerShown': False,
+                'isFidoSupported': False,
+                'originalRequest': ms_login_CDATA['sCtx'],
+                'country': ms_login_CDATA['country'],
+                'flowToken': ms_login_CDATA['sFT'],
+            })
+            ms_get_credential_type = user.post(
+                'https://login.microsoftonline.com'
+                '/common/GetCredentialType?mkt=en-US',
+                data=ms_get_credential_type_payload
+            ).json()
+            adfs_login = user.get(
+                ms_get_credential_type['Credentials']['FederationRedirectUrl'])
+            adfs_login_payload = adfs_login.payload(updates={
+                    'ctl00$ContentPlaceHolder1$UsernameTextBox': user.username,
+                    'ctl00$ContentPlaceHolder1$PasswordTextBox': user.password,
+            })
+            adfs_login_form_url = adfs_login.form().get('action')
+            if urlparse(adfs_login_form_url).netloc == '':
+                # If intermediate page exists
+                adfs_intermediate_url = (
+                    'https://adfs.ykpaoschool.cn' + adfs_login_form_url)
+                adfs_intermediate = user.post(adfs_intermediate_url,
+                    data=adfs_login_payload)
+                adfs_intermediate_payload = adfs_intermediate.payload()
+                back_to_ms_url = adfs_intermediate.form().get('action')
+                if urlparse(back_to_ms_url).netloc == '':
+                    # If stays in adfs, username or password is incorrect
+                    raise WrongUsernameOrPassword(
+                        'Incorrect username or password.')
+            else:
+                # If intermediate page does not exist
+                back_to_ms_url = adfs_login_form_url
+                adfs_intermediate_payload = adfs_login_payload
+            ms_confirm = user.post(back_to_ms_url,
+                data=adfs_intermediate_payload)
+            if ms_confirm.url().netloc != 'login.microsoftonline.com':
+                # If ms_confirm is skipped, sometimes happens
+                response = ms_confirm.response
+            else:
+                ms_confirm_CDATA = ms_confirm.CDATA()
+                ms_confirm_payload = {
+                    'LoginOptions': 0,
+                    'ctx': ms_confirm_CDATA['sCtx'],
+                    'hpgrequestid': ms_confirm_CDATA['sessionId'],
+                    'flowToken': ms_confirm_CDATA['sFT'],
+                    'canary': ms_confirm_CDATA['canary'],
+                    'i2': None,
+                    'i17': None,
+                    'i18': None,
+                    'i19': 66306,
+                }
+                ms_out_url = 'https://login.microsoftonline.com/kmsi'
+                ms_out = user.post(ms_out_url, data=ms_confirm_payload)
+                if ms_out.url().geturl() in ms_out_url:
+                    # If encounters 'Working...' page
+                    response = ms_out.submit().response
+                else:
+                    response = ms_out.response
+        super().__init__(user, response)
+
+
+class PowerschoolLearningPage(Page):
+
+    """Class 'PowerschoolLearningPage' inherits and adds on specific
+    initialization and attributes for Powerschool Learning to
+    'ykpstools.page.Page'.
+    """
+
+    def __init__(self, user):
+        """Log in to Powerschool Learning to initialize.
+        
+        user: a ykpstools.user.User instance, the User this page belongs to.
+        """
+        psl_url = 'ykpaoschool.learning.powerschool.com'
+        psl_login = user.get(
+            'https://' + psl_url + '/do/oauth2/office365_login')
+        if psl_login.url().netloc == psl_url: # If already logged in
+            response = psl_login.response
+        else:
+            response = user.microsoft(psl_login).response
+        super().__init__(user, response)
