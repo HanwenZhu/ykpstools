@@ -100,7 +100,7 @@ class User:
 
     # @property
     # def IP(self):
-    #     """Internal function. Returns IP address in LAN."""
+    #     """Returns IP address in LAN."""
     #     def _is_valid_IP(IP):
     #         """Internal function. Check if IP is internal IPv4 address."""
     #         if (IP and isinstance(IP, str) and not IP.startswith('127.')
@@ -166,7 +166,7 @@ class User:
 
     # @property
     # def MAC(self):
-    #     """Internal function. Returns MAC address."""
+    #     """Returns MAC address."""
     #     MAC = uuid.UUID(int=uuid.getnode()).hex[-12:].upper()
     #     return ':'.join([MAC[i:i+2] for i in range(0, 11, 2)])
 
@@ -314,4 +314,5 @@ class User:
         if psl_login.url().netloc == psl_url:
             # If already logged in
             return psl_login
-        return self.ms_login(psl_login)
+        else:
+            return self.ms_login(psl_login)
