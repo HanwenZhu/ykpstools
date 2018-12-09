@@ -11,15 +11,16 @@ __all__ = [
     'PowerschoolPage',
     'MicrosoftPage',
     'PowerschoolLearningPage'
-    'ps_login',
-    'ms_login',
-    'psl_login',
+    'auth',
+    'powerschool',
+    'microsoft',
+    'powerschool_learning',
 ]
 __author__ = 'Thomas Zhu'
 
-from .exceptions import *
-from .page import *
-from .user import *
+from ykpstools.exceptions import *
+from ykpstools.page import *
+from ykpstools.user import *
 
 
 def auth(*args, **kwargs):

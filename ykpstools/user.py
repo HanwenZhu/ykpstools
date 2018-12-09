@@ -15,9 +15,10 @@ import warnings
 
 import requests
 
-from .page import Page, PowerschoolPage, MicrosoftPage, PowerschoolLearningPage
-from .exceptions import (LoginConnectionError, WrongUsernameOrPassword,
-    GetUsernamePasswordError, GetIPError)
+from ykpstools.page import (Page, PowerschoolPage, MicrosoftPage,
+    PowerschoolLearningPage)
+from ykpstools.exceptions import (LoginConnectionError,
+    WrongUsernameOrPassword, GetUsernamePasswordError, GetIPError)
 
 
 class User:
