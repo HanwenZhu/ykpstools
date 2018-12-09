@@ -10,7 +10,7 @@ __all__ = [
     'Page',
     'PowerschoolPage',
     'MicrosoftPage',
-    'PowerschoolLearningPage'
+    'PowerschoolLearningPage',
     'auth',
     'powerschool',
     'microsoft',
