@@ -194,8 +194,8 @@ class MicrosoftPage(Page):
             adfs_login_form_url = adfs_login.form().get('action')
             if urlparse(adfs_login_form_url).netloc == '':
                 # If intermediate page exists
-                adfs_intermediate_url = (
-                    'https://adfs.ykpaoschool.cn' + adfs_login_form_url)
+                adfs_intermediate_url = urljoin(
+                    'https://adfs.ykpaoschool.cn', adfs_login_form_url)
                 adfs_intermediate = user.post(adfs_intermediate_url,
                     data=adfs_login_payload)
                 adfs_intermediate_payload = adfs_intermediate.payload()
@@ -228,7 +228,7 @@ class MicrosoftPage(Page):
                 }
                 ms_out_url = 'https://login.microsoftonline.com/kmsi'
                 ms_out = user.post(ms_out_url, data=ms_confirm_payload)
-                if ms_out.url().geturl() in ms_out_url:
+                if ms_out_url in ms_out.url().geturl():
                     # If encounters 'Working...' page
                     response = ms_out.submit().response
                 else:
@@ -248,11 +248,21 @@ class PowerschoolLearningPage(Page):
         
         user: a ykpstools.user.User instance, the User this page belongs to.
         """
-        psl_url = 'ykpaoschool.learning.powerschool.com'
-        psl_login = user.get(
-            'https://' + psl_url + '/do/oauth2/office365_login')
-        if psl_login.url().netloc == psl_url: # If already logged in
+        self.psl_url = urlparse('https://ykpaoschool.learning.powerschool.com')
+        psl_login = user.get(urljoin(
+            self.psl_url.geturl(), '/do/oauth2/office365_login'))
+        if psl_login.url().netloc == self.psl_url: # If already logged in
             response = psl_login.response
         else:
             response = user.microsoft(psl_login).response
         super().__init__(user, response)
+
+    @property
+    def classes(self):
+        """The 'classes' property parses and returns the classes from the home
+        page.
+        """
+        return {
+            div.find('a').string:
+            urljoin(self.psl_url.geturl(), div.find('a').get('href'))
+            for div in self.soup().find_all('div', class_='eclass_filter')}
