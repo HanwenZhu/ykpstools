@@ -303,6 +303,7 @@ class PowerschoolLearningPage(LoginPageBase):
         else:
             return self.user.microsoft(psl_login)
 
+    @property
     def classes(self):
         """The 'classes' property parses and returns the classes from the home
         page.
