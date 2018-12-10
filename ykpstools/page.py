@@ -209,7 +209,7 @@ class MicrosoftPage(LoginPageBase):
                         self.user.get('https://login.microsoftonline.com/').
         """
         if redirect_to_ms is None: # Default if page not specified
-            redirect_to_ms = self.user.get('https://login.microsoftonline.com/')
+            redirect_to_ms = self.user.get('https://login.microsoftonline.com')
         if len(redirect_to_ms.text().splitlines()) == 1:
             # If already logged in
             return redirect_to_ms.submit()
