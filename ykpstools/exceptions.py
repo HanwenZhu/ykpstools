@@ -24,8 +24,9 @@ class WrongUsernameOrPassword(Error, ValueError):
 
     """Username or password provided or loaded is wrong."""
 
-    def __init__(self):
-        super().__init__('Username or password provided or loaded is wrong.')
+    def __init__(self,
+        message='Username or password provided or loaded is wrong.'):
+        super().__init__(message)
 
 
 class GetUsernamePasswordError(Error, FileNotFoundError, IOError, ValueError):

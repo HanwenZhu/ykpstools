@@ -8,6 +8,7 @@ __all__ = [
     'GetIPError',
     'User',
     'Page',
+    'LoginPageBase',
     'PowerschoolPage',
     'MicrosoftPage',
     'PowerschoolLearningPage',

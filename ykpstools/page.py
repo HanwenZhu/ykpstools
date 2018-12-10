@@ -2,7 +2,7 @@
 functions.
 """
 
-__all__ = ['Page', 'PowerschoolPage', 'MicrosoftPage',
+__all__ = ['Page', 'LoginPageBase', 'PowerschoolPage', 'MicrosoftPage',
     'PowerschoolLearningPage']
 __author__ = 'Thomas Zhu'
 
