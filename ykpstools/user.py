@@ -210,15 +210,23 @@ class User:
         ext_portal = self.get('http://1.1.1.1:8000/ext_portal.magi',
             *args, **kwargs)
         # html is like <script>location.replace("url")</script>, hence
-        url = ext_portal.text().split('"')[1] 
+        url = re.findall(
+            r'''location\.replace\(['"](.*)['"]\);''', ext_portal.text())[0]
         if url == 'http://1.1.1.1:8000/logout.htm':
             return ext_portal
-        with warnings.catch_warnings(): # Catch InsecureRequestWarning
+        with warnings.catch_warnings(): # catch InsecureRequestWarning
             warnings.simplefilter('ignore', category=InsecureRequestWarning)
             portal = self.get(url, verify=False)
             credentials = {'userid': self.username, 'passwd': self.password}
             credentials.update(updates)
-            return portal.submit(updates=credentials, verify=False)
+            submit_auth = portal.submit( # no redirects to make process faster
+                updates=credentials, verify=False, allow_redirects=False)
+            if submit_auth.response.status_code == 200: # should not happen
+                # html is like <script>alert('error')</script>, hence
+                raise WrongUsernameOrPassword('From server: ' + re.findall(
+                    r'''alert\(['"](.*)['"]\);''', submit_auth.text())[0])
+            else:
+                return submit_auth
 
     def powerschool(self):
         """Returns login to Powerschool Page."""
