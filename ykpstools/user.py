@@ -209,16 +209,16 @@ class User:
         """Logins to YKPS Wi-Fi."""
         ext_portal = self.get('http://1.1.1.1:8000/ext_portal.magi',
             *args, **kwargs)
-        # html is like <script>window.location="url"</script>, hence
+        # html is like <script>location.replace("url")</script>, hence
         url = ext_portal.text().split('"')[1] 
         if url == 'http://1.1.1.1:8000/logout.htm':
             return ext_portal
         with warnings.catch_warnings(): # Catch InsecureRequestWarning
             warnings.simplefilter('ignore', category=InsecureRequestWarning)
             portal = self.get(url, verify=False)
-            updates = {'userid': self.username, 'passwd': self.password}
-            updates.update(updates)
-            return portal.submit(updates=updates, verify=False)
+            credentials = {'userid': self.username, 'passwd': self.password}
+            credentials.update(updates)
+            return portal.submit(updates=credentials, verify=False)
 
     def powerschool(self):
         """Returns login to Powerschool Page."""
