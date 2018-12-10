@@ -205,7 +205,7 @@ class User:
         """
         return Page(self, self.session.post(*args, **kwargs))
 
-    def auth(self, *args, **kwargs):
+    def auth(self, updates={}, *args, **kwargs):
         """Logins to YKPS Wi-Fi."""
         ext_portal = self.get('http://1.1.1.1:8000/ext_portal.magi',
             *args, **kwargs)
@@ -217,6 +217,7 @@ class User:
             warnings.simplefilter('ignore', category=InsecureRequestWarning)
             portal = self.get(url, verify=False)
             updates = {'userid': self.username, 'passwd': self.password}
+            updates.update(updates)
             return portal.submit(updates=updates, verify=False)
 
     def powerschool(self):
