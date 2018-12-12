@@ -9,6 +9,10 @@ import getpass
 import json
 import os
 import re
+import socket
+import subprocess
+import sys
+import time
 from urllib.parse import urlparse, parse_qs
 from urllib3.exceptions import InsecureRequestWarning
 import warnings
@@ -93,77 +97,109 @@ class User:
             'Password for {}: '.format(username)).strip()
         return username, password
 
-    # @property
-    # def IP(self):
-    #     """Returns IP address in LAN."""
-    #     def _is_valid_IP(IP):
-    #         """Internal function. Check if IP is internal IPv4 address."""
-    #         if (IP and isinstance(IP, str) and not IP.startswith('127.')
-    #             and re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', IP)):
-    #             return True
-    #         else:
-    #             return False
-    #     try:
-    #         IP = socket.gethostbyname(socket.gethostname())
-    #         assert _is_valid_IP(IP)
-    #     except (socket.error, AssertionError):
-    #         try:
-    #             IP = socket.gethostbyname(socket.getfqdn())
-    #             assert _is_valid_IP(IP)
-    #         except (socket.error, AssertionError):
-    #             if sys.platform in {'win32', 'win16', 'dos', 'cygwin'}:
-    #                 try:
-    #                     ipconfig = subprocess.check_output('ipconfig /all',
-    #                         shell=True, stderr=subprocess.DEVNULL).decode()
-    #                 except subprocess.CalledProcessError as error:
-    #                     raise GetIPError(
-    #                         "Can't retrieve IP address.") from error
-    #                 else:
-    #                     for ipconfig_line in ipconfig.splitlines():
-    #                         line = ipconfig_line.strip()
-    #                         if re.search(r'[\s^]IP(?:v4)?[\s\:$]', line):
-    #                             # 'IP' or 'IPv4'
-    #                             IP = line.split()[-1]
-    #                             if _is_valid_IP(IP):
-    #                                 break
-    #                     else:
-    #                         raise GetIPError("Can't retrieve IP address.")
-    #             elif (sys.platform == 'darwin'
-    #                 or sys.platform.startswith('linux')):
-    #                 macos_interfaces = ['en0', 'en1']
-    #                 linux_interfaces = ['eth0', 'wlan0', 'wifi0', 'eth1',
-    #                     'eth2', 'wlan1', 'ath0', 'ath1', 'ppp0']
-    #                 if sys.platform == 'darwin':
-    #                     interfaces = macos_interfaces + linux_interfaces
-    #                 elif sys.platform.startswith('linux'):
-    #                     interfaces = linux_interfaces + macos_interfaces
-    #                 for interface in interfaces:
-    #                     try:
-    #                         ifconfig = subprocess.check_output(
-    #                             'ifconfig {} | grep "inet "'.format(interface),
-    #                             shell=True, stderr=subprocess.DEVNULL).decode()
-    #                         IP = ifconfig.splitlines()[0].strip().split()[1]
-    #                         assert _is_valid_IP(IP)
-    #                     except (subprocess.CalledProcessError,
-    #                         AssertionError, IndexError):
-    #                         continue
-    #                     else:
-    #                         break
-    #                 else:
-    #                     raise GetIPError("Can't retrieve IP address. "
-    #                         'Maybe your network is disabled or disconnected?')
-    #             else:
-    #                 raise GetIPError('Not implemented OS: ' + sys.platform)
-    #     if not _is_valid_IP(IP):
-    #         raise GetIPError("Can't retrieve IP address.")
-    #     else:
-    #         return IP
+    @property
+    def unix_interfaces(self):
+        if sys.platform == 'darwin':
+            networksetup = subprocess.check_output(
+                'networksetup -listallhardwareports |'
+                'grep "Device: "', shell=True,
+                stderr=subprocess.DEVNULL).decode()
+            return [n.strip().split()[-1]
+                for n in networksetup.splitlines()]
+        elif sys.platform.startswith('linux'):
+            return ['eth0', 'wlan0', 'wifi0', 'eth1',
+                'eth2', 'wlan1', 'ath0', 'ath1', 'ppp0', 'en0', 'en1']
+        else:
+            return [NotImplemented]
 
-    # @property
-    # def MAC(self):
-    #     """Returns MAC address."""
-    #     MAC = uuid.UUID(int=uuid.getnode()).hex[-12:].upper()
-    #     return ':'.join([MAC[i:i+2] for i in range(0, 11, 2)])
+    def mac_connect_to_wifi(self):
+        if sys.platform == 'darwin':
+            interface = self.unix_interfaces[0]
+            is_network_on = subprocess.check_output(
+                'networksetup -getairportpower {}'.format(interface),
+                shell=True, stderr=subprocess.DEVNULL
+            ).decode().strip().split()[-1] == 'On'
+            if not is_network_on:
+                subprocess.check_output(
+                    'networksetup -setairportpower {} on'.format(interface),
+                    shell=True, stderr=subprocess.DEVNULL)
+            current_wifi_output = subprocess.check_output(
+                'networksetup -getairportnetwork {}'.format(interface),
+                shell=True, stderr=subprocess.DEVNULL).decode().strip()
+            correct_wifi = current_wifi_output.split()[-1] in {
+                'GUEST', 'STUWIRELESS', 'SJWIRELESS'}
+            if not correct_wifi:
+                # wierd issues if don't sleep
+                subprocess.check_output(
+                    'networksetup -setairportnetwork {} {} {}'.format(
+                        interface, 'STUWIRELESS', '') + '&& sleep 3',
+                    shell=True, stderr=subprocess.DEVNULL)
+
+    @property
+    def IP(self):
+        """Returns IP address in LAN."""
+        def _is_valid_IP(IP):
+            """Internal function. Check if IP is internal IPv4 address."""
+            if (IP and isinstance(IP, str) and not IP.startswith('127.')
+                and re.match(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', IP)):
+                return True
+            else:
+                return False
+        try:
+            IP = socket.gethostbyname(socket.gethostname())
+            assert _is_valid_IP(IP)
+        except (socket.error, AssertionError):
+            try:
+                IP = socket.gethostbyname(socket.getfqdn())
+                assert _is_valid_IP(IP)
+            except (socket.error, AssertionError):
+                if sys.platform in {'win32', 'win16', 'dos', 'cygwin'}:
+                    try:
+                        ipconfig = subprocess.check_output('ipconfig /all',
+                            shell=True, stderr=subprocess.DEVNULL).decode()
+                    except subprocess.CalledProcessError as error:
+                        raise GetIPError(
+                            "Can't retrieve IP address.") from error
+                    else:
+                        for ipconfig_line in ipconfig.splitlines():
+                            line = ipconfig_line.strip()
+                            if re.search(r'[\s^]IP(?:v4)?[\s\:$]', line):
+                                # 'IP' or 'IPv4'
+                                IP = line.split()[-1]
+                                if _is_valid_IP(IP):
+                                    break
+                        else:
+                            raise GetIPError("Can't retrieve IP address.")
+                elif (sys.platform == 'darwin'
+                    or sys.platform.startswith('linux')):
+                    interfaces = self.unix_interfaces
+                    for interface in interfaces:
+                        try:
+                            ifconfig = subprocess.check_output(
+                                'ifconfig {} | grep "inet "'.format(interface),
+                                shell=True, stderr=subprocess.DEVNULL).decode()
+                            IP = ifconfig.splitlines()[0].strip().split()[1]
+                            assert _is_valid_IP(IP)
+                        except (subprocess.CalledProcessError,
+                            AssertionError, IndexError):
+                            continue
+                        else:
+                            break
+                    else:
+                        raise GetIPError("Can't retrieve IP address. "
+                            'Maybe your network is disabled or disconnected?')
+                else:
+                    raise GetIPError('Not implemented OS: ' + sys.platform)
+        if not _is_valid_IP(IP):
+            raise GetIPError("Can't retrieve IP address.")
+        else:
+            return IP
+
+    @property
+    def MAC(self):
+        """Returns MAC address."""
+        MAC = uuid.UUID(int=uuid.getnode()).hex[-12:].upper()
+        return ':'.join([MAC[i:i+2] for i in range(0, 11, 2)])
 
     def _connection_error_wrapper(function):
         """Internal decorator. Raise LoginConnectionError if can't connect."""
@@ -207,6 +243,7 @@ class User:
 
     def auth(self, updates={}, *args, **kwargs):
         """Logins to YKPS Wi-Fi."""
+        self.mac_connect_to_wifi()
         ext_portal = self.get('http://1.1.1.1:8000/ext_portal.magi',
             *args, **kwargs)
         # html is like <script>location.replace("url")</script>, hence
