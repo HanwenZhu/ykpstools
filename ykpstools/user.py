@@ -12,7 +12,6 @@ import re
 import socket
 import subprocess
 import sys
-import time
 from urllib.parse import urlparse, parse_qs
 from urllib3.exceptions import InsecureRequestWarning
 import warnings
@@ -102,8 +101,8 @@ class User:
         if sys.platform == 'darwin':
             networksetup = subprocess.check_output(
                 'networksetup -listallhardwareports |'
-                'grep "Device: "', shell=True,
-                stderr=subprocess.DEVNULL).decode()
+                'grep "Device: "',
+                shell=True, stderr=subprocess.DEVNULL).decode()
             return [n.strip().split()[-1]
                 for n in networksetup.splitlines()]
         elif sys.platform.startswith('linux'):
@@ -123,17 +122,26 @@ class User:
                 subprocess.check_output(
                     'networksetup -setairportpower {} on'.format(interface),
                     shell=True, stderr=subprocess.DEVNULL)
-            current_wifi_output = subprocess.check_output(
-                'networksetup -getairportnetwork {}'.format(interface),
-                shell=True, stderr=subprocess.DEVNULL).decode().strip()
-            correct_wifi = current_wifi_output.split()[-1] in {
+            is_correct_wifi = subprocess.check_output(
+                    'networksetup -getairportnetwork {}'.format(interface),
+                    shell=True, stderr=subprocess.DEVNULL
+                ).decode().strip().split()[-1] in {
                 'GUEST', 'STUWIRELESS', 'SJWIRELESS'}
-            if not correct_wifi:
-                # wierd issues if don't sleep
+            if not is_correct_wifi:
                 subprocess.check_output(
                     'networksetup -setairportnetwork {} {} {}'.format(
-                        interface, 'STUWIRELESS', '') + '&& sleep 3',
+                        interface, 'STUWIRELESS', ''),
                     shell=True, stderr=subprocess.DEVNULL)
+            while True:
+                try:
+                    subprocess.check_output(
+                        'ping 1.1.1.1' # ping blocks until wifi ready
+                        ' -c 1 -W 1 -i 0.1', # waits for 0.1 second each loop
+                        shell=True, stderr=subprocess.DEVNULL)
+                except subprocess.CalledProcessError:
+                    continue
+                else:
+                    break
 
     @property
     def IP(self):
