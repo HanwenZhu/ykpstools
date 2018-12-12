@@ -24,21 +24,31 @@ from ykpstools.page import *
 from ykpstools.user import *
 
 
-def auth(*args, **kwargs):
-    """A simple wrapper for User(*args, **kwargs).auth()."""
-    return User(*args, **kwargs).auth()
+def auth(*args, **kwargs, fargs=(), fkwargs={}):
+    """A simple wrapper for
+    User(*args, **kwargs).auth(*fargs, **fkwargs).
+    """
+    return User(*args, **kwargs).auth(*fargs, **fkwargs)
 
 
-def powerschool(*args, **kwargs):
-    """A simple wrapper for User(*args, **kwargs).powerschool()."""
-    return User(*args, **kwargs).powerschool()
+def powerschool(*args, **kwargs, fargs=(), fkwargs={}):
+    """A simple wrapper for
+    User(*args, **kwargs).powerschool(*fargs, **fkwargs).
+    """
+    return User(*args, **kwargs).powerschool(*fargs, **fkwargs)
 
 
-def microsoft(redirect_to_ms=None, *args, **kwargs):
-    """A simple wrapper for User(*args, **kwargs).microsoft(redirect_to_ms)."""
-    return User(*args, **kwargs).microsoft(redirect_to_ms)
+def microsoft(*args, **kwargs, fargs=(), fkwargs={}):
+    """
+    A simple wrapper for
+    User(*args, **kwargs).microsoft(*fargs, **fkwargs).
+    """
+    return User(*args, **kwargs).microsoft(*fargs, **fkwargs)
 
 
-def powerschool_learning(*args, **kwargs):
-    """A simple wrapper for User(*args, **kwargs).powerschool_learning()."""
-    return User(*args, **kwargs).powerschool_learning()
+def powerschool_learning(*args, **kwargs, fargs=(), fkwargs={}):
+    """
+    A simple wrapper for
+    User(*args, **kwargs).powerschool_learning(*fargs, **fkwargs).
+    """
+    return User(*args, **kwargs).powerschool_learning(*fargs, **fkwargs)
