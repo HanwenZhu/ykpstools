@@ -234,7 +234,7 @@ class AuthPage(LoginPageBase):
                     'networksetup -setairportnetwork {} {} {}'.format(
                         interface, 'STUWIRELESS', ''),
                     shell=True, stderr=subprocess.DEVNULL)
-            while True:
+            for i in range(10000):
                 try:
                     subprocess.check_output(
                         'ping auth.ykpaoschool.cn' # ping blocks until wifi ready
@@ -244,6 +244,8 @@ class AuthPage(LoginPageBase):
                     continue
                 else:
                     break
+            else:
+                pass
 
     @property
     def IP(self):
