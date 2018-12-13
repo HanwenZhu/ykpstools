@@ -6,7 +6,7 @@ __all__ = ['Page', 'LoginPageBase', 'AuthPage', 'PowerschoolPage',
     'MicrosoftPage', 'PowerschoolLearningPage']
 __author__ = 'Thomas Zhu'
 
-from abc import ABC, abstractmethod
+import abc
 import base64
 import hashlib
 import hmac
@@ -25,7 +25,7 @@ from bs4 import BeautifulSoup
 from ykpstools.exceptions import WrongUsernameOrPassword, GetIPError
 
 
-class Page(ABC):
+class Page(abc.ABC):
 
     """Class 'Page' is a wrapper around requests.Response with convenient
     functions.
@@ -145,7 +145,7 @@ class LoginPageBase(Page):
         page = self.login(*args, **kwargs)
         super().__init__(self.user, page)
 
-    @abstractmethod
+    @abc.abstractmethod
     def login(self, *args, **kwargs):
         """For login during initialization.
         Should override in its subclasses.
