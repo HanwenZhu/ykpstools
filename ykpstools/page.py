@@ -11,10 +11,12 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import re
 import socket
 import subprocess
 import sys
+import threading
 from urllib.parse import urlparse, urljoin
 from urllib3.exceptions import InsecureRequestWarning
 import warnings
@@ -172,8 +174,7 @@ class AuthPage(LoginPageBase):
     def login(self, *args, **kwargs):
         """For login to WiFi during initialization."""
         self.mac_connect_to_wifi()
-        ext_portal = self.user.get('http://1.1.1.1:8000/ext_portal.magi',
-            *args, **kwargs)
+        ext_portal = self.user.get('http://1.1.1.1:8000/ext_portal.magi')
         # html is like <script>location.replace("url")</script>, hence
         url = re.findall(
             r'''location\.replace\(['"](.*)['"]\);''', ext_portal.text())[0]
@@ -184,9 +185,10 @@ class AuthPage(LoginPageBase):
             portal = self.user.get(url, verify=False)
             credentials = {
                 'userid': self.user.username, 'passwd': self.user.password}
-            credentials.update(kwargs.get('updates', {}))
+            credentials.update(kwargs.pop('updates', {}))
             submit_auth = portal.submit( # no redirects to make process faster
-                updates=credentials, verify=False, allow_redirects=False)
+                updates=credentials, verify=False, allow_redirects=False,
+                *args, **kwargs)
             if submit_auth.response.status_code == 200: # should not happen
                 # html is like <script>alert('error')</script>, hence
                 raise WrongUsernameOrPassword('From server: ' + re.findall(
@@ -237,7 +239,7 @@ class AuthPage(LoginPageBase):
             for i in range(10000):
                 try:
                     subprocess.check_output(
-                        'ping auth.ykpaoschool.cn' # ping blocks until wifi ready
+                        'ping auth.ykpaoschool.cn' # ping blocks until ready
                         ' -c 1 -W 1 -i 0.1', # waits for 0.1 second each loop
                         shell=True, stderr=subprocess.DEVNULL)
                 except subprocess.CalledProcessError:
@@ -471,12 +473,100 @@ class PowerschoolLearningPage(LoginPageBase):
         else:
             return self.user.microsoft(psl_login)
 
-    @property
-    def classes(self):
-        """The 'classes' property parses and returns the classes from the home
-        page.
+    def _append_class(self, link):
+        """Internal function. Append a class to self._classes"""
+        response = self.user.get(link)
+        self._classes.append(self.Class(self.user, response))
+
+    def get_classes(self, max_threads=None, from_cache=True):
+        """The 'get_classes' property parses and returns a list of
+        self.Class by GET'ing and caching all classes asynchronously.
+
+        max_threads: int or None, the maximum number of threads running at a
+                     time. None means no restriction, defaults to None.
+        from_cache: whether to load classes from cache, defaults to True.
         """
-        return {
-            div.find('a').string:
-            urljoin(self.url().geturl(), div.find('a').get('href'))
-            for div in self.soup().find_all('div', class_='eclass_filter')}
+        if not hasattr(self, '_classes') or not from_cache:
+            self._classes = []
+            divs = self.soup().find_all('div', class_='eclass_filter')
+            threads = []
+            for div in divs:
+                link = urljoin(self.url().geturl(), div.find('a').get('href'))
+                threads.append(threading.Thread(
+                    target=self._append_class, args=(link,)))
+                if max_threads is not None:
+                    if len(threads) >= max_threads:
+                        for thread in threads:
+                            thread.start()
+                        for thread in threads:
+                            thread.join()
+                        threads = []
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        return self._classes
+
+    class Class(Page):
+
+        """Class 'Class' is an attribute of PowerschoolLearningPage and an
+        abstraction of a class found in Powerschool Learning.
+        """
+
+        @property
+        def name(self):
+            return self.soup().title
+
+        @staticmethod
+        def ensure_directory(directory):
+            """os.makedirs(directory) if directory doesn't exist."""
+            try:
+                os.makedirs(directory)
+            except FileExistsError:
+                if not os.isdir(directory):
+                    raise
+
+        # TODO, finish all this mess
+        def download_all_to(self, directory='.', max_threads=None,
+            from_cache=True):
+            """Download all downloadable files in this Class asynchronously,
+            chached.
+
+            directory: directory to download to, defaults to '.',
+            max_threads: int or None, the maximum number of threads running at
+                         a time. None means no restriction, defaults to None.
+            from_cache: whether to load classes from cache, defaults to True.
+            """
+            raise NotImplementedError
+            for topic in self.get_topics(max_threads, from_cache):
+                for subtopic in self.get_subtopics_from_topic(topic):
+                    download_directory = '{}/{}/{}'.format(
+                        directory, topic, subtopic)
+                    self.ensure_directory(download_directory)
+                    for download in self.get_names_to_downloads_from_subtopic(
+                        subtopic):
+                        pass
+
+        def get_topics(self, max_threads=None, from_cache=True):
+            """Get all topics, in soups.
+
+            max_threads: int or None, the maximum number of threads running at
+                         a time. None means there is no restriction. Defaults
+                         to None.
+            from_cache: whether to load classes from cache, defaults to True.
+            """
+            raise NotImplementedError
+            if not hasattr(self, _topics) or from_cache:
+                for a in self.soup().find_all(
+                    'a', id=re.compile(r'plink_\d*')):
+                    link = urljoin(self.url().geturl(), a.get('href'))
+            return self._topics
+
+        def get_subtopics_from_topic(self, topic):
+            raise NotImplementedError
+            pass
+
+        def get_names_to_downloads_from_subtopic(self, subtopic):
+            raise NotImplementedError
+            pass
+

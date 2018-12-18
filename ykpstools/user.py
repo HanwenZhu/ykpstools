@@ -63,9 +63,9 @@ class User:
         """Internal function.
         Derived from: https://github.com/yu-george/AutoAuth-YKPS/
         """
-        usr_dat = os.path.expanduser(
-        '~/Library/Application Support/AutoAuth/usr.dat')
-        if not os.path.exists(usr_dat):
+        usr_dat = '~/Library/Application Support/AutoAuth/usr.dat'
+        usr_dat = os.path.expanduser(usr_dat)
+        if not os.path.isfile(usr_dat):
             raise GetUsernamePasswordError("'usr.dat' not found.")
         try:
             with open(usr_dat) as file:
@@ -77,7 +77,7 @@ class User:
                 "Error when opening 'usr.dat'") from error
         if not username or not password:
             raise GetUsernamePasswordError(
-                "'usr.dat' contains invalid username or password.") 
+                "'usr.dat' contains invalid username or password.")
         return username, password
 
     @staticmethod
