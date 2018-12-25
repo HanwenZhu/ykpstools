@@ -35,7 +35,7 @@ class Page(abc.ABC):
 
     def __init__(self, user, response):
         """Initialize a Page.
-        
+
         user: a ykpstools.user.User instance, the User this page belongs to,
         response: a requests.Response instance or
                           a ykpstools.page.Page instance.
@@ -48,14 +48,14 @@ class Page(abc.ABC):
 
     def url(self, *args, **kwargs):
         """Get current URL.
-        
+
         *args: arguments for urllib.parse.urlparse,
         *kwargs: keyword arguments for urllib.parse.urlparse."""
         return urlparse(self.response.url, *args, **kwargs)
 
     def text(self, encoding=None):
         """Returns response text.
-        
+
         encoding=None: encoding charset for HTTP, defaults to obtain from
                        headers.
         """
@@ -65,7 +65,7 @@ class Page(abc.ABC):
 
     def soup(self, features='lxml', *args, **kwargs):
         """Returns bs4.BeautifulSoup of this page.
-        
+
         features='lxml': 'features' keyword argument for BeautifulSoup,
         *args: arguments for BeautifulSoup,
         **kwargs: keyword arguments for BeautifulSoup.
@@ -79,7 +79,7 @@ class Page(abc.ABC):
 
     def form(self, *find_args, **find_kwargs):
         """Gets HTML element form as bs4.element.Tag of this page.
-        
+
         *find_args: arguments for BeautifulSoup.find('form'),
         **find_kwargs: keyword arguments for BeautifulSoup.find('form').
         """
@@ -87,7 +87,7 @@ class Page(abc.ABC):
 
     def payload(self, updates={}, *find_args, **find_kwargs):
         """Load completed form of this page.
-        
+
         updates: updates to payload,
         *find_args: arguments for BeautifulSoup.find('form'),
         **find_kwargs: keyword arguments for BeautifulSoup.find('form').
@@ -106,7 +106,7 @@ class Page(abc.ABC):
     def submit(self, updates={}, find_args=(), find_kwargs={},
         *args, **kwargs):
         """Submit form from page.
-        
+
         updates: updates to payload,
         find_args: arguments for BeautifulSoup.find('form'),
         find_kwargs: keyword arguments for BeautifulSoup.find('form'),
@@ -125,7 +125,7 @@ class Page(abc.ABC):
 
     def json(self, *args, **kwargs):
         """Returns response in json format.
-        
+
         *args: arguments for requests.Response.json,
         *kwargs: keyword arguments for requests.Response.json.
         """
@@ -138,7 +138,7 @@ class LoginPageBase(Page):
 
     def __init__(self, user, *args, **kwargs):
         """Log in to a url in self.login to initialize.
-        
+
         user: a ykpstools.user.User instance, the User this page belongs to,
         *args: arguments for self.login,
         **kwargs: keyword arguments for self.login.
@@ -164,7 +164,7 @@ class AuthPage(LoginPageBase):
 
     def __init__(self, user, *args, **kwargs):
         """Log in to WiFi to initialize.
-        
+
         user: a ykpstools.user.User instance, the User this page belongs to.
         *args: arguments for POST to http://auth.ykpaoschool.cn
         *kwargs: keyword arguments for POST to http://auth.ykpaoschool.cn
@@ -324,7 +324,7 @@ class PowerschoolPage(LoginPageBase):
 
     def __init__(self, user):
         """Log in to Powerschool to initialize.
-        
+
         user: a ykpstools.user.User instance, the User this page belongs to.
         """
         super().__init__(user)
@@ -361,7 +361,7 @@ class MicrosoftPage(LoginPageBase):
 
     def __init__(self, user, redirect_to_ms=None):
         """Log in to Microsoft to initialize.
-        
+
         user: a ykpstools.user.User instance, the User this page belongs to,
         redirect_to_ms: requests.models.Response or str, the page that a login
                         page redirects to for Microsoft Office365 login,
@@ -372,7 +372,7 @@ class MicrosoftPage(LoginPageBase):
 
     def login(self, redirect_to_ms=None):
         """For login to Microsoft during initialization.
-        
+
         redirect_to_ms: requests.models.Response or str, the page that a login
                         page redirects to for Microsoft Office365 login,
                         defaults to
@@ -457,7 +457,7 @@ class PowerschoolLearningPage(LoginPageBase):
 
     def __init__(self, user):
         """Log in to Powerschool Learning to initialize.
-        
+
         user: a ykpstools.user.User instance, the User this page belongs to.
         """
         super().__init__(user)
@@ -473,10 +473,10 @@ class PowerschoolLearningPage(LoginPageBase):
         else:
             return self.user.microsoft(psl_login)
 
-    def _append_class(self, link):
-        """Internal function. Append a class to self._classes"""
+    def _append_class(self, link, i):
+        """Internal function. Append a class to self._classes."""
         response = self.user.get(link)
-        self._classes.append(self.Class(self.user, response))
+        self._classes[i] = self.Class(self.user, response)
 
     def get_classes(self, max_threads=None, from_cache=True):
         """The 'get_classes' property parses and returns a list of
@@ -487,13 +487,13 @@ class PowerschoolLearningPage(LoginPageBase):
         from_cache: whether to load classes from cache, defaults to True.
         """
         if not hasattr(self, '_classes') or not from_cache:
-            self._classes = []
             divs = self.soup().find_all('div', class_='eclass_filter')
+            self._classes = [None] * len(divs)
             threads = []
-            for div in divs:
+            for i, div in enumerate(divs):
                 link = urljoin(self.url().geturl(), div.find('a').get('href'))
                 threads.append(threading.Thread(
-                    target=self._append_class, args=(link,)))
+                    target=self._append_class, args=(link, i)))
                 if max_threads is not None:
                     if len(threads) >= max_threads:
                         for thread in threads:
@@ -515,7 +515,8 @@ class PowerschoolLearningPage(LoginPageBase):
 
         @property
         def name(self):
-            return self.soup().title
+            return self.soup().find(
+                'h1', id='cms_page_eclass_name').get_text(strip=True)
 
         @staticmethod
         def ensure_directory(directory):
@@ -528,45 +529,84 @@ class PowerschoolLearningPage(LoginPageBase):
 
         # TODO, finish all this mess
         def download_all_to(self, directory='.', max_threads=None,
-            from_cache=True):
+            from_cache=True, blocking=False):
             """Download all downloadable files in this Class asynchronously,
             chached.
 
-            directory: directory to download to, defaults to '.',
+            directory: str, directory to download to, defaults to '.',
             max_threads: int or None, the maximum number of threads running at
-                         a time. None means no restriction, defaults to None.
+                         a time. None means no restriction, defaults to None,
             from_cache: whether to load classes from cache, defaults to True.
             """
-            raise NotImplementedError
             for topic in self.get_topics(max_threads, from_cache):
                 for subtopic in self.get_subtopics_from_topic(topic):
-                    download_directory = '{}/{}/{}'.format(
-                        directory, topic, subtopic)
+                    names_to_downloads = self.get_names_to_downloads(subtopic)
+                    if names_to_downloads == {}:
+                        continue
+                    download_directory = os.path.join(
+                        os.path.abspath(directory),
+                        self.get_topic_name(topic),
+                        self.get_subtopic_name(subtopic))
                     self.ensure_directory(download_directory)
-                    for download in self.get_names_to_downloads_from_subtopic(
-                        subtopic):
-                        pass
+                    for name in names_to_downloads:
+                        download_content = self.user.get(
+                            names_to_downloads[name]).response.content
+                        file_directory = os.path.join(download_directory, name)
+                        with open(file_directory, 'wb') as file:
+                            file.write(download_content)
+
+        def _append_topic(self, link, i):
+            """Internal function. Append a topic soup to self._topics."""
+            soup = self.user.get(link).soup()
+            self._topics[i] = soup
 
         def get_topics(self, max_threads=None, from_cache=True):
             """Get all topics, in soups.
 
             max_threads: int or None, the maximum number of threads running at
-                         a time. None means there is no restriction. Defaults
-                         to None.
+                         a time. None means no restriction, defaults to None.
             from_cache: whether to load classes from cache, defaults to True.
             """
-            raise NotImplementedError
-            if not hasattr(self, _topics) or from_cache:
-                for a in self.soup().find_all(
-                    'a', id=re.compile(r'plink_\d*')):
+            if not hasattr(self, '_topics') or not from_cache:
+                as_ = self.soup().find_all('a', id=re.compile(r'plink_\d+'))
+                self._topics = [None] * len(as_)
+                threads = []
+                for i, a in enumerate(as_):
                     link = urljoin(self.url().geturl(), a.get('href'))
+                    threads.append(threading.Thread(
+                        target=self._append_topic, args=(link, i)))
+                    if max_threads is not None:
+                        if len(threads) >= max_threads:
+                            for thread in threads:
+                                thread.start()
+                            for thread in threads:
+                                thread.join()
+                            threads = []
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join()
             return self._topics
 
         def get_subtopics_from_topic(self, topic):
-            raise NotImplementedError
-            pass
+            return topic.find_all('div',
+                id=re.compile(r'box_\d+'), class_=['cms_box', 'cms_box_file'])
 
-        def get_names_to_downloads_from_subtopic(self, subtopic):
-            raise NotImplementedError
-            pass
+        def get_names_to_downloads(self, subtopic):
+            download_elements = subtopic.find_all('a',
+                attrs={'data-event-action': 'download'})
+            names_to_downloads = {
+                a.string: urljoin(self.url().geturl(), a.get('href'))
+                for a in download_elements}
+            return names_to_downloads
+
+        def get_topic_name(self, topic):
+            add_selected_js = topic.find('script', type='text/javascript',
+                text=re.compile(r'sidebarSel\(\d+\);')).string
+            selected_id = re.findall(
+                r'sidebarSel\((\d+)\);', add_selected_js)[0]
+            return topic.find('a', id='plink_{}'.format(selected_id)).string
+
+        def get_subtopic_name(self, subtopic):
+            return subtopic.find('span', class_='box_title').string
 

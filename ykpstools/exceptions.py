@@ -4,11 +4,10 @@ __all__ = ['Error', 'LoginConnectionError', 'WrongUsernameOrPassword',
     'GetUsernamePasswordError', 'GetIPError']
 __author__ = 'Thomas Zhu'
 
+
 class Error(Exception):
 
-    """The most basic ykpstools Exception.
-    All errors should inherit from it.
-    """
+    """Basic ykpstools exception that all errors should inherit from."""
 
     pass
 
@@ -22,11 +21,11 @@ class LoginConnectionError(Error, ConnectionError):
 
 class WrongUsernameOrPassword(Error, ValueError):
 
-    """Username or password provided or loaded is wrong."""
+    """The username or password submitted is wrong."""
 
-    def __init__(self,
-        message='Username or password provided or loaded is wrong.'):
-        super().__init__(message)
+    def __init__(self, msg='The username or password submitted is wrong.',
+        *args, **kwargs):
+        super().__init__(msg, *args, **kwargs)
 
 
 class GetUsernamePasswordError(Error, FileNotFoundError, IOError, ValueError):

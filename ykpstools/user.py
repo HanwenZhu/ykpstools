@@ -23,7 +23,7 @@ class User:
     def __init__(self, username=None, password=None, *, load=True,
         prompt=False, session_args=(), session_kwargs={}):
         """Initialize a User.
-        
+
         username=None: str, user's username, defaults to load or prompt,
         password=None: str, user's password, defaults to load or prompt,
         load=True: bool, try load username and password from local AutoAuth,
