@@ -174,31 +174,18 @@ class AuthPage(LoginPageBase):
     def login(self, *args, **kwargs):
         """For login to WiFi during initialization."""
         self.mac_connect_to_wifi()
-        ext_portal = self.user.get('http://1.1.1.1:8000/ext_portal.magi')
-        # html is like <script>location.replace("url")</script>, hence
-        url = re.findall(
-            r'''location\.replace\(['"](.*)['"]\);''', ext_portal.text())[0]
-        if url == 'http://1.1.1.1:8000/logout.htm':
-            return ext_portal
-        with warnings.catch_warnings(): # catch InsecureRequestWarning
-            warnings.simplefilter('ignore', category=InsecureRequestWarning)
-            portal = self.user.get(url, verify=False)
-            credentials = {
-                'userid': self.user.username, 'passwd': self.user.password}
-            credentials.update(kwargs.pop('updates', {}))
-            submit_auth = portal.submit( # no redirects to make process faster
-                updates=credentials, verify=False, allow_redirects=False,
-                *args, **kwargs)
-            if submit_auth.response.status_code == 200: # should not happen
-                # html is like <script>alert('error')</script>, hence
-                raise WrongUsernameOrPassword('From server: ' + re.findall(
-                    r'''alert\(['"](.*)['"]\);''', submit_auth.text())[0])
-            else:
-                return submit_auth
+        payload = {
+            'opr': 'pwdLogin',
+            'userName': self.user.username,
+            'pwd': self.user.password,
+            'rememberPwd': '1',
+        }
+        return self.user.post('http://1.1.1.3/ac_portal/login.php',
+            data=payload, *args, **kwargs)
 
     def logout(self, *args, **kwargs):
         """Logouts from YKPS Wi-Fi, with args and kwargs for self.user.get."""
-        return self.user.get('http://1.1.1.1/userout.magi', *args, **kwargs)
+        raise NotImplementedError('The school does not implement ajaxlogout.')
 
     @property
     def unix_interfaces(self):
@@ -313,7 +300,7 @@ class AuthPage(LoginPageBase):
     def MAC(self):
         """Returns MAC address."""
         MAC = uuid.UUID(int=uuid.getnode()).hex[-12:].upper()
-        return ':'.join([MAC[i:i+2] for i in range(0, 11, 2)])
+        return ':'.join(MAC[i:i+2] for i in range(0, 11, 2))
 
 
 class PowerschoolPage(LoginPageBase):
