@@ -18,8 +18,6 @@ import subprocess
 import sys
 import threading
 from urllib.parse import urlparse, urljoin
-from urllib3.exceptions import InsecureRequestWarning
-import warnings
 
 import requests
 from bs4 import BeautifulSoup
@@ -166,8 +164,8 @@ class AuthPage(LoginPageBase):
         """Log in to WiFi to initialize.
 
         user: a ykpstools.user.User instance, the User this page belongs to.
-        *args: arguments for POST to http://auth.ykpaoschool.cn
-        *kwargs: keyword arguments for POST to http://auth.ykpaoschool.cn
+        *args: arguments for POST login
+        *kwargs: keyword arguments for POST login
         """
         super().__init__(user, *args, **kwargs)
 
@@ -226,7 +224,7 @@ class AuthPage(LoginPageBase):
             for i in range(10000):
                 try:
                     subprocess.check_output(
-                        'ping auth.ykpaoschool.cn' # ping blocks until ready
+                        'ping 10.2.191.253' # ping blocks until ready
                         ' -c 1 -W 1 -i 0.1', # waits for 0.1 second each loop
                         shell=True, stderr=subprocess.DEVNULL)
                 except subprocess.CalledProcessError:
