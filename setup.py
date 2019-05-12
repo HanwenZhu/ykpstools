@@ -11,7 +11,7 @@ setuptools.setup(
     description='Tools & utilities associated with online logins of YKPS.',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/icreiuheciijc/ykpstools',
+    url='https://github.com/HanwenZhu/ykpstools',
     author='Thomas Zhu',
     license='MIT',
     packages=['ykpstools'],
