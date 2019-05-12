@@ -24,11 +24,11 @@ python3 -m pip install --upgrade ykpstools
 ```
 Or, to get the newest version of YKPS Tools (recommended since it is still at an early stage of development):
 ```sh
-python3 -m pip install --upgrade git+https://github.com/icreiuheciijc/ykpstools.git
+python3 -m pip install --upgrade git+https://github.com/HanwenZhu/ykpstools.git
 ```
 Or, with local installation:
 ```sh
-git clone https://github.com/icreiuheciijc/ykpstools.git
+git clone https://github.com/HanwenZhu/ykpstools.git
 cd ykpstools
 python3 -m pip install --upgrade -e .
 ```
